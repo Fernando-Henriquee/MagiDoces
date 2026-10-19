@@ -1,4 +1,9 @@
-/** Rotas do módulo. Preenchidas conforme as páginas são implementadas. */
+import { lazy } from 'react';
+import { Route } from 'react-router';
+
+const ProfilePage = lazy(() => import('./profile-page').then((m) => ({ default: m.ProfilePage })));
+
+/** Rotas do perfil do usuário. */
 export function profileRoutes() {
-  return null;
+  return <Route path="/perfil" element={<ProfilePage />} />;
 }

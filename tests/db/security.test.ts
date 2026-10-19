@@ -324,3 +324,21 @@ describe('storage', () => {
     expect(await env.as(zeca, (s) => s.query(`select 1 from storage.objects where bucket_id = 'receipts'`))).toHaveLength(0);
   });
 });
+
+describe('configurações do negócio', () => {
+  it('owner altera as configurações e a alteração é auditada', async () => {
+    const updated = await env.as(ana, (s) =>
+      s.query<{ pix_key: string }>(`update public.businesses set pix_key = 'pix@magi.test', default_due_day = 5 where id = $1 returning pix_key`, [bizA]),
+    );
+    expect(updated).toEqual([{ pix_key: 'pix@magi.test' }]);
+    const audit = await env.as(ana, (s) =>
+      s.query<{ action: string; actor_id: string }>(`select action, actor_id from public.audit_logs where entity = 'business' and business_id = $1`, [bizA]),
+    );
+    expect(audit).toEqual([{ action: 'business.updated', actor_id: ana }]);
+    await env.as(ana, (s) => s.query(`update public.businesses set default_due_day = 10 where id = $1`, [bizA]));
+  });
+
+  it('fuso horário inválido é recusado', async () => {
+    await expect(env.as(ana, (s) => s.query(`update public.businesses set timezone = 'Lua/Base' where id = $1`, [bizA]))).rejects.toThrow(/Fuso horário inválido/);
+  });
+});

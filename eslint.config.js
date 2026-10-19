@@ -5,7 +5,7 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist', 'dev-dist', 'coverage', 'playwright-report', 'test-results', '.local-backend', 'node_modules'] },
+  { ignores: ['dist', 'dev-dist', 'coverage', 'playwright-report', 'test-results', '.local-backend', '.claude', 'node_modules'] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ['**/*.{ts,tsx}'],
@@ -21,5 +21,10 @@ export default tseslint.config(
   {
     files: ['tools/**/*.ts', 'scripts/**/*.ts', 'tests/**/*.ts'],
     rules: { 'no-console': 'off' },
+  },
+  {
+    // Arquivos de rotas exportam páginas carregadas sob demanda (lazy): esperado.
+    files: ['src/features/*/routes.tsx'],
+    rules: { 'react-refresh/only-export-components': 'off' },
   },
 );

@@ -258,3 +258,27 @@ describe('despesas', () => {
     expect(payments).toHaveLength(1);
   });
 });
+
+describe('vencimento efetivo', () => {
+  it('considera o saldo sem parcela quando ele vence antes da próxima parcela', async () => {
+    const id = await createPurchase({
+      due_date: addDays(today, 5),
+      items: [{ description: 'Formas', quantity: 1, unit: 'un', unit_price_cents: 9000 }],
+      plan: { mode: 'pending' },
+    });
+    await env.as(ana, (s) =>
+      s.rpc('add_bill_payment', {
+        p_kind: 'purchase', p_bill_id: id, p_request_id: crypto.randomUUID(), p_amount_cents: 3000,
+        p_paid_on: null, p_due_date: addDays(today, 30), p_method: 'pix',
+      }),
+    );
+    const row = await env.as(ana, (s) =>
+      s.one<{ next_due_date: string; unscheduled_cents: string }>(
+        `select to_char(next_due_date, 'YYYY-MM-DD') as next_due_date, unscheduled_cents from public.v_purchases where id = $1`,
+        [id],
+      ),
+    );
+    expect(n(row.unscheduled_cents)).toBe(6000);
+    expect(row.next_due_date).toBe(addDays(today, 5));
+  });
+});

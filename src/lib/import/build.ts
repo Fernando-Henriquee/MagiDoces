@@ -352,10 +352,13 @@ export function buildPreview(input: BuildInput): PreviewRow[] {
     let paidOn: ISODate | null = paymentDate;
     let paidOnInferred = false;
     if ((paymentStatus === 'paid' || paymentStatus === 'partial') && !paidOn) {
-      if (input.rules.paidWithoutDate === 'use_sale_date' && saleDate) {
-        paidOn = saleDate;
-        paidOnInferred = true;
-        inferred.push('data_pagamento');
+      if (input.rules.paidWithoutDate === 'use_sale_date') {
+        // Sem data da venda válida, o erro de data já foi apontado acima.
+        if (saleDate) {
+          paidOn = saleDate;
+          paidOnInferred = true;
+          inferred.push('data_pagamento');
+        }
       } else {
         errors.push('Marcada como paga, mas sem data de pagamento. Defina a regra de migração.');
       }

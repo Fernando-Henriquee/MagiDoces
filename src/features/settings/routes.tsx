@@ -1,4 +1,9 @@
-/** Rotas do módulo. Preenchidas conforme as páginas são implementadas. */
+import { lazy } from 'react';
+import { Route } from 'react-router';
+
+const SettingsPage = lazy(() => import('./settings-page').then((m) => ({ default: m.SettingsPage })));
+
+/** Rotas de configurações do negócio. */
 export function settingsRoutes() {
-  return null;
+  return <Route path="/configuracoes" element={<SettingsPage />} />;
 }

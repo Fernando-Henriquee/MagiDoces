@@ -294,3 +294,24 @@ describe('sha256', () => {
     expect(sha256Bytes(new Uint8Array(1000).fill(97))).toBe('41edece42d63e8d9bf515a9ba6932e1c20cbc9f5a5d134645adb5db1b9737ea3');
   });
 });
+
+describe('mensagens de pagamento', () => {
+  it('data da venda inválida não gera também erro de pagamento quando a regra usa a data da venda', () => {
+    const columns = [
+      { index: 0, header: 'Data', role: 'date' as const },
+      { index: 1, header: 'Produto', role: 'product' as const },
+      { index: 2, header: 'Qtd', role: 'quantity' as const },
+      { index: 3, header: 'Pago', role: 'paid' as const },
+    ];
+    const [row] = buildPreview(
+      input({
+        headers: ['Data', 'Produto', 'Qtd', 'Pago'],
+        rows: [{ rowNumber: 2, cells: ['31/02/2025', 'Bolo de pote', '1', 'sim'] }],
+        columns,
+        layout: 'long',
+        rules: { ...DEFAULT_RULES, missingPrice: 'current_product_price', paidWithoutDate: 'use_sale_date' },
+      }),
+    );
+    expect(row?.errors).toEqual(['Data inválida: "31/02/2025".']);
+  });
+});
