@@ -31,3 +31,6 @@ playwright/.cache/
 # área de trabalho de agentes (Claude Code)
 .claude/worktrees/
 .env.provision
+
+# backups locais de banco (dados reais) — nunca versionar
+backups/

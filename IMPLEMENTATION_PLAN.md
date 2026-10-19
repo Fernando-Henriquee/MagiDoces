@@ -135,31 +135,51 @@ Princípios:
 |---|---|---|
 | 0 | Análise do ambiente e plano | ✅ |
 | 1 | Scaffold (Vite/React/TS/Tailwind/ESLint/Vitest), git | ✅ |
-| 2 | Migrations: schema, RLS, triggers, RPCs, views, relatórios | ✅ |
-| 3 | Testes de banco com PGlite | ✅ (93 testes) |
-| 4 | Bibliotecas de domínio (dinheiro, datas, receitas, recebíveis) + testes | ⬜ |
-| 5 | Emulador local da API Supabase + seed local | ⬜ |
-| 6 | UI base: tema, componentes, layout, auth, PWA, cache offline | ⬜ |
-| 7 | Clientes, Produtos (histórico de preços, foto), Ingredientes/Receitas | ⬜ |
-| 8 | Vendas (nova/editar/cancelar), Pagamentos, Contas a receber, WhatsApp | ⬜ |
-| 9 | Compras, Despesas, Pagamentos parcelados | ⬜ |
-| 10 | Dashboard, Financeiro/fluxo de caixa, Relatórios, Exportação | ⬜ |
-| 11 | Importação de planilhas | ⬜ |
-| 12 | Auditoria, Configurações, Perfil | ⬜ |
-| 13 | E2E Playwright (9 fluxos) | ⬜ |
-| 14 | Documentação (README, Supabase, Vercel, backup, rollback) | ⬜ |
+| 2 | Migrations: schema, RLS, triggers, RPCs, views, relatórios | ✅ (8 migrations) |
+| 3 | Testes de banco com PGlite | ✅ (102 testes, inclui backup/restauração) |
+| 4 | Bibliotecas de domínio + testes unitários | ✅ |
+| 5 | Emulador local da API Supabase + seed local | ✅ |
+| 6 | UI base: tema, componentes, layout, auth, PWA, cache offline | ✅ |
+| 7 | Clientes, Produtos (histórico, foto), Ingredientes/Receitas | ✅ |
+| 8 | Vendas, Pagamentos, Contas a receber, WhatsApp | ✅ |
+| 9 | Compras, Despesas, Pagamentos parcelados | ✅ |
+| 10 | Dashboard, Financeiro/fluxo de caixa, Relatórios, Exportação | ✅ |
+| 11 | Importação de planilhas | ✅ (falta testar com a planilha real) |
+| 12 | Auditoria, Configurações, Perfil | ✅ |
+| 13 | E2E Playwright | ✅ (17 cenários × celular e desktop) |
+| 14 | Documentação (README, Supabase, Vercel, backup, rollback) | ✅ |
 
 ## 9. Registro de progresso
 
 - 19/10/2026 — Etapa 0 concluída. PGlite validado: RLS, `SET ROLE`, views
   `security_invoker` e funções `SECURITY DEFINER` funcionam.
-- 19/10/2026 — Etapas 1–3: 7 migrations (fundação, cadastros, vendas, contas a
-  pagar, importação, views/relatórios, storage/seed) e 93 testes de banco
-  passando. Bugs encontrados pelos testes e corrigidos: acesso a record não
-  atribuído em itens de compra; concatenação `text[] || literal`; stub de
-  `auth.uid()` com setting vazio.
+- 19/10/2026 — Etapas 1–3: migrations e testes de banco. Bugs encontrados pelos
+  testes e corrigidos: record não atribuído em itens de compra; concatenação
+  `text[] || literal`; stub de `auth.uid()` com setting vazio.
+- 19/10/2026 — Etapas 4–14. Correções relevantes encontradas pelos testes:
+  - auditoria de `businesses` falhava (migration 0800);
+  - rótulos de campos com `Controller` não associados (acessibilidade);
+  - cache restaurado tratado como atual (agora sempre revalidado);
+  - estado offline inicial ignorado pelo TanStack Query;
+  - telas offline sem dados carregando indefinidamente;
+  - troca de período usando o 1º dia do mês em vez de hoje;
+  - script de backup exportaria só `storage.objects` (`--table` anula `--schema`).
 
-## 10. Próxima etapa
+## 10. Decisões técnicas
 
-Etapa 4 — bibliotecas de domínio no frontend (dinheiro, datas, cálculo de venda,
-recebíveis, receitas) com testes unitários.
+- Ferramentas compatíveis com Node 20 (instalado), alvo Node 22 (`.nvmrc`, CI, Vercel).
+- Totais da venda armazenados e mantidos por trigger a partir dos itens; saldo
+  sempre derivado em views.
+- Restauração de backup com `session_replication_role = replica` (gatilhos
+  suspensos); membros e perfis recriados pelo provisionamento.
+- Emulador local próprio (Auth/PostgREST/RPC/Storage sobre PGlite) para
+  desenvolvimento e E2E sem Docker; não substitui a validação num projeto real.
+- Escritas financeiras só por RPC; cadastros por CRUD com RLS e privilégios por coluna.
+
+## 11. Próximos passos
+
+1. Receber a planilha antiga e criar o teste com o formato real dela.
+2. Criar os projetos Supabase (teste e produção), aplicar migrations e provisionar as
+   duas contas (docs/SUPABASE.md).
+3. Repositório no GitHub e projeto na Vercel (docs/VERCEL.md).
+4. Fazer o checklist de docs/SUPABASE.md, seção 5, no ambiente publicado.
