@@ -136,6 +136,10 @@ export function monthLabel(iso: ISODate): string {
   return `${MONTHS[Number(m) - 1]} de ${y}`;
 }
 
+export function capitalize(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
 export type PeriodKind = 'day' | 'week' | 'month' | 'custom';
 
 export interface Period {
@@ -176,7 +180,7 @@ export function describePeriod(period: Period): string {
     case 'day':
       return formatDateBR(period.from);
     case 'month':
-      return monthLabel(period.from);
+      return capitalize(monthLabel(period.from));
     default:
       return `${formatDateBR(period.from)} a ${formatDateBR(period.to)}`;
   }

@@ -100,7 +100,7 @@ describe('períodos do dashboard', () => {
   });
 
   it('descreve o período', () => {
-    expect(describePeriod(periodFor('month', '2026-10-05'))).toBe('outubro de 2026');
+    expect(describePeriod(periodFor('month', '2026-10-05'))).toBe('Outubro de 2026');
     expect(describePeriod(periodFor('week', '2026-10-19'))).toBe('19/10/2026 a 25/10/2026');
   });
 });

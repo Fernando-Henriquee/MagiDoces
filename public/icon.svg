@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Magi Doces">
+  <rect width="512" height="512" rx="112" fill="#684638"/>
+  <path d="M256 104c4 22 2 38-10 52" fill="none" stroke="#9BBF7A" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="246" cy="168" r="26" fill="#C2475F"/>
+  <circle cx="238" cy="160" r="7" fill="#E7889B"/>
+  <path d="M148 286c-22 0-38-17-38-37 0-22 18-38 40-37 3-30 27-52 57-52 13 0 25 4 34 11 9-7 21-11 34-11 30 0 54 22 57 52 22-1 40 15 40 37 0 20-16 37-38 37z" fill="#FFF7ED"/>
+  <path d="M138 296h236l-26 124c-2 10-11 17-21 17H185c-10 0-19-7-21-17z" fill="#E9B7C5"/>
+  <path d="M190 300l12 134M236 300l4 136M276 300l-4 136M322 300l-12 134" stroke="#D493A6" stroke-width="10" stroke-linecap="round"/>
+</svg>

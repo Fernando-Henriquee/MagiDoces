@@ -9,14 +9,20 @@
   },
   "scripts": {
     "dev": "vite",
+    "dev:local": "tsx scripts/dev-local.ts",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit",
+    "typecheck": "tsc -b",
     "lint": "eslint .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:unit": "vitest run --project unit",
-    "test:db": "vitest run --project db"
+    "test:db": "vitest run --project db",
+    "test:e2e": "playwright test",
+    "local:api": "tsx tools/local-backend/server.ts",
+    "local:api:demo": "tsx tools/local-backend/server.ts --demo",
+    "icons": "pwa-assets-generator",
+    "check": "npm run typecheck && npm run lint && npm run test && npm run build"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.3.0",

@@ -1,0 +1,87 @@
+@import 'tailwindcss';
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/fraunces';
+
+/*
+ * Identidade Magi Doces: creme (fundo), marrom (ações principais), rosa (destaques).
+ * Contrastes verificados para texto: ink/cream 15:1, brand/cream 8:1, muted/cream 5:1.
+ */
+@theme {
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Fraunces Variable', ui-serif, Georgia, 'Times New Roman', serif;
+
+  --color-cream: #fff7ed;
+  --color-panel: #ffffff;
+  --color-subtle: #fbf2e8;
+  --color-line: #ecdfd2;
+  --color-line-strong: #d9c6b4;
+
+  --color-ink: #2b1d17;
+  --color-ink-soft: #4f3d33;
+  --color-muted: #75604f;
+
+  --color-brand: #684638;
+  --color-brand-hover: #553729;
+  --color-brand-fg: #fff7ed;
+
+  --color-accent: #e9b7c5;
+  --color-accent-soft: #f9e6ec;
+  --color-accent-ink: #8a3c55;
+
+  --color-success: #2f6b4a;
+  --color-success-soft: #e4f1e8;
+  --color-warning: #87570a;
+  --color-warning-soft: #fbefd8;
+  --color-danger: #a8323a;
+  --color-danger-soft: #f9e2e3;
+  --color-info: #2f5f80;
+  --color-info-soft: #e3eef6;
+
+  --radius-card: 0.875rem;
+  --shadow-card: 0 1px 2px rgb(104 70 56 / 0.06), 0 1px 1px rgb(104 70 56 / 0.04);
+  --shadow-pop: 0 10px 30px -10px rgb(43 29 23 / 0.25);
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    -webkit-tap-highlight-color: transparent;
+    text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-cream font-sans text-ink antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-ink;
+    font-variation-settings: 'opsz' 48;
+    letter-spacing: -0.01em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-ink);
+  }
+}
+
+@utility num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum', 'cv11';
+}
+
+@utility safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+@utility safe-top {
+  padding-top: env(safe-area-inset-top);
+}

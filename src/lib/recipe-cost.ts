@@ -11,11 +11,13 @@ import { areCompatible, IncompatibleUnitsError, type MeasureUnit, unitFactor } f
  */
 
 class Fraction {
-  constructor(
-    readonly num: bigint,
-    readonly den: bigint,
-  ) {
+  readonly num: bigint;
+  readonly den: bigint;
+
+  constructor(num: bigint, den: bigint) {
     if (den === 0n) throw new Error('Denominador zero');
+    this.num = num;
+    this.den = den;
   }
 
   static of(value: number | string): Fraction {
