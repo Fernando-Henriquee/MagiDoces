@@ -14,6 +14,7 @@ import { useDashboard } from '@/data/dashboard';
 import { useReceivables, useSales } from '@/data/sales';
 import { useBusiness } from '@/features/business/business-context';
 import { formatDateBR } from '@/lib/dates';
+import { GettingStarted } from './getting-started';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -47,6 +48,8 @@ export function DashboardPage() {
           ) : null
         }
       />
+      {recent.data && recent.data.length === 0 ? <GettingStarted /> : null}
+
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <PeriodPicker period={period} onChange={setPeriod} />
         <Freshness query={summary} />
@@ -126,7 +129,7 @@ export function DashboardPage() {
           <div className="p-2">
             {receivables.isPending ? <LoadingBlock rows={3} /> : null}
             {receivables.isError && !receivables.data ? <ErrorState error={receivables.error} onRetry={() => void receivables.refetch()} /> : null}
-            {receivables.data && receivables.data.length === 0 ? <EmptyState title="Nada a receber" description="Todas as vendas estão pagas." className="border-0" /> : null}
+            {receivables.data && receivables.data.length === 0 ? <EmptyState title="Nada a receber" description="Nenhuma venda com saldo em aberto." className="border-0" /> : null}
             <ul className="divide-y divide-line">
               {receivables.data?.slice(0, 6).map((sale) => (
                 <li key={sale.id}>

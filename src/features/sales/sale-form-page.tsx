@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { EntityPicker } from '@/components/shared/entity-picker';
 import { Money } from '@/components/shared/money';
+import { ProductThumb } from '@/components/shared/product-thumb';
 import { Page, PageHeader } from '@/components/layout/page';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -273,13 +274,16 @@ function SaleForm({ saleId, initial, products }: SaleFormProps) {
                     type="button"
                     onClick={() => addProduct(product)}
                     className={cn(
-                      'relative flex min-h-16 flex-col justify-between rounded-xl border px-3 py-2 text-left transition-colors',
+                      'relative flex min-h-16 items-center gap-2.5 rounded-xl border px-2.5 py-2 text-left transition-colors',
                       count > 0 ? 'border-accent bg-accent-soft/60' : 'border-line bg-panel hover:bg-subtle',
                     )}
                     aria-label={`Adicionar ${product.name}${count ? ` (${count} na venda)` : ''}`}
                   >
-                    <span className="line-clamp-2 text-sm font-medium leading-tight">{product.name}</span>
-                    <span className="text-xs text-muted">{product.price_cents === null ? 'preço a definir' : formatBRL(product.price_cents)}</span>
+                    <ProductThumb path={product.photo_path} className="size-9" />
+                    <span className="min-w-0 flex-1">
+                      <span className="line-clamp-2 text-sm font-medium leading-tight">{product.name}</span>
+                      <span className="block text-xs text-muted">{product.price_cents === null ? 'preço a definir' : formatBRL(product.price_cents)}</span>
+                    </span>
                     {count > 0 ? (
                       <span className="absolute right-1.5 top-1.5 grid min-w-5 place-items-center rounded-full bg-brand px-1 text-[0.7rem] font-semibold text-brand-fg">{count}</span>
                     ) : null}

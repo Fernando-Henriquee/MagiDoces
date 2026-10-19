@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router';
 import { DataTable, type Column } from '@/components/shared/data-table';
 import { ExportMenu } from '@/components/shared/export-menu';
 import { Money } from '@/components/shared/money';
+import { ProductThumb } from '@/components/shared/product-thumb';
 import { Page, PageHeader } from '@/components/layout/page';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,7 +30,17 @@ export function CostSourceBadge({ source }: { source: ProductRow['cost_source'] 
 }
 
 const columns: Column<ProductRow>[] = [
-  { key: 'name', header: 'Produto', cell: (p) => p.name, sortValue: (p) => p.name },
+  {
+    key: 'name',
+    header: 'Produto',
+    cell: (p) => (
+      <span className="inline-flex items-center gap-2.5">
+        <ProductThumb path={p.photo_path} className="size-8" />
+        {p.name}
+      </span>
+    ),
+    sortValue: (p) => p.name,
+  },
   { key: 'category', header: 'Categoria', cell: (p) => <span className="text-muted">{p.category ?? '—'}</span>, sortValue: (p) => p.category },
   { key: 'price', header: 'Preço', align: 'right', cell: (p) => (p.price_cents === null ? <Badge tone="warning">a definir</Badge> : <Money cents={p.price_cents} />), sortValue: (p) => p.price_cents },
   {
@@ -137,7 +148,8 @@ export function ProductsPage() {
             const m = marginOf(p);
             return (
               <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+                <ProductThumb path={p.photo_path} />
+                <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{p.name}</p>
                   <p className="flex items-center gap-1.5 text-xs text-muted">
                     <CostSourceBadge source={p.cost_source} />
