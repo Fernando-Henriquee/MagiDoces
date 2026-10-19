@@ -73,6 +73,11 @@ export default defineConfig({
       },
     },
   },
-  server: { port: 5173, strictPort: true },
+  server: {
+    port: 5173,
+    strictPort: true,
+    // Não recarregar por mudanças fora do app (ambiente local, áreas de trabalho de agentes).
+    watch: { ignored: ['**/.local-backend/**', '**/.claude/**', '**/test-results/**', '**/playwright-report/**'] },
+  },
   preview: { port: 4173, strictPort: true },
 });
