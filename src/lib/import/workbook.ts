@@ -14,7 +14,7 @@ type SheetJS = typeof import('xlsx');
 
 function decodeText(buffer: ArrayBuffer): string {
   const utf8 = new TextDecoder('utf-8').decode(buffer);
-  if (!utf8.includes('�')) return utf8.replace(/^﻿/, '');
+  if (!utf8.includes('\ufffd')) return utf8.replace(/^\ufeff/, '');
   return new TextDecoder('windows-1252').decode(buffer);
 }
 

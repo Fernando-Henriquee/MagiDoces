@@ -26,3 +26,6 @@ playwright/.cache/
 !.vscode/extensions.json
 .idea/
 .vercel
+
+# área de trabalho de agentes (Claude Code)
+.claude/worktrees/

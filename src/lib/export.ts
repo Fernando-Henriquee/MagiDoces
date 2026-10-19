@@ -41,7 +41,7 @@ export function toCSV<T>(rows: T[], columns: ExportColumn<T>[]): string {
   const body = rows.map((row) =>
     columns.map((column) => escapeCSV(formatCell(column.value(row), column.kind ?? 'text'))).join(';'),
   );
-  return `﻿${[header, ...body].join('\r\n')}`;
+  return `\ufeff${[header, ...body].join('\r\n')}`;
 }
 
 function triggerDownload(blob: Blob, fileName: string) {

@@ -1,6 +1,6 @@
-import { type InputHTMLAttributes, useEffect, useState } from 'react';
-import { formatDecimalBR, parseBRL, parseQuantity } from '@/lib/money';
+import { type InputHTMLAttributes, useState } from 'react';
 import { cn } from '@/lib/cn';
+import { formatDecimalBR, parseBRL, parseQuantity } from '@/lib/money';
 import { Input } from './input';
 
 interface MoneyInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'value' | 'onChange' | 'type'> {
@@ -10,13 +10,10 @@ interface MoneyInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'v
 }
 
 /** Campo de valor em reais: aceita "12,5", "1.234,56"; guarda centavos inteiros. */
-export function MoneyInput({ value, onValueChange, className, onBlur, ...props }: MoneyInputProps) {
-  const [text, setText] = useState(value === null ? '' : formatDecimalBR(value));
-  const [focused, setFocused] = useState(false);
-
-  useEffect(() => {
-    if (!focused) setText(value === null ? '' : formatDecimalBR(value));
-  }, [value, focused]);
+export function MoneyInput({ value, onValueChange, className, onBlur, onFocus, ...props }: MoneyInputProps) {
+  // Enquanto o campo está em edição mostramos o texto digitado; fora dele, o valor formatado.
+  const [draft, setDraft] = useState<string | null>(null);
+  const shown = draft ?? (value === null ? '' : formatDecimalBR(value));
 
   return (
     <div className="relative">
@@ -25,17 +22,18 @@ export function MoneyInput({ value, onValueChange, className, onBlur, ...props }
         inputMode="decimal"
         autoComplete="off"
         className={cn('num pl-9 text-right', className)}
-        value={text}
-        onFocus={() => setFocused(true)}
+        value={shown}
+        onFocus={(event) => {
+          setDraft(shown);
+          onFocus?.(event);
+        }}
         onChange={(event) => {
           const next = event.target.value.replace(/[^\d.,-]/g, '');
-          setText(next);
+          setDraft(next);
           onValueChange(next.trim() === '' ? null : parseBRL(next));
         }}
         onBlur={(event) => {
-          setFocused(false);
-          const parsed = parseBRL(text);
-          setText(parsed === null ? text : formatDecimalBR(parsed));
+          setDraft(null);
           onBlur?.(event);
         }}
         {...props}
@@ -49,23 +47,24 @@ interface QuantityInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>,
   onValueChange: (value: number | null) => void;
 }
 
+function quantityText(value: number | null): string {
+  return value === null ? '' : String(value).replace('.', ',');
+}
+
 /** Quantidade com até 3 casas decimais, vírgula decimal. */
 export function QuantityInput({ value, onValueChange, className, ...props }: QuantityInputProps) {
-  const [text, setText] = useState(value === null ? '' : String(value).replace('.', ','));
-  useEffect(() => {
-    const current = parseQuantity(text);
-    if (current !== value) setText(value === null ? '' : String(value).replace('.', ','));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value]);
+  const [draft, setDraft] = useState(quantityText(value));
+  // Se o valor mudou por fora (ex.: botões + e −), o texto digitado deixa de valer.
+  const shown = parseQuantity(draft) === value ? draft : quantityText(value);
   return (
     <Input
       inputMode="decimal"
       autoComplete="off"
       className={cn('num text-right', className)}
-      value={text}
+      value={shown}
       onChange={(event) => {
         const next = event.target.value.replace(/[^\d,.]/g, '');
-        setText(next);
+        setDraft(next);
         onValueChange(parseQuantity(next));
       }}
       {...props}

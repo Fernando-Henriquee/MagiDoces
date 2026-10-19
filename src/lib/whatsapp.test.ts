@@ -69,7 +69,7 @@ describe('exportação', () => {
 
   it('gera CSV no padrão brasileiro com BOM e escapes', () => {
     const csv = toCSV(sales, columns);
-    expect(csv.startsWith('﻿')).toBe(true);
+    expect(csv.startsWith('\ufeff')).toBe(true);
     expect(csv.slice(1).split('\r\n')).toEqual([
       'Cliente;Data;Saldo;Itens',
       'Maria Souza;01/10/2026;29,00;2× Bolo de pote, 1× Torta de limão',

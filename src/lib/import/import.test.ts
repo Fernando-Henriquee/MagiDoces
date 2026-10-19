@@ -68,7 +68,7 @@ describe('leitura de planilhas', () => {
   });
 
   it('lê CSV UTF-8 com vírgula', () => {
-    const csv = '﻿Data,Cliente,Produto\n2025-03-05,Zé,Bolo de pote\n';
+    const csv = '\ufeffData,Cliente,Produto\n2025-03-05,Zé,Bolo de pote\n';
     const [sheet] = readWorkbookFromBuffer(XLSX, toArrayBuffer(new TextEncoder().encode(csv)), 'v.csv');
     expect(sheetDataRows(sheet!)[0]?.cells).toEqual(['2025-03-05', 'Zé', 'Bolo de pote']);
   });

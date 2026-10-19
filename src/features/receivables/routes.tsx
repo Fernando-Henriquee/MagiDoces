@@ -1,4 +1,8 @@
-/** Rotas do módulo. Preenchidas conforme as páginas são implementadas. */
+import { lazy } from 'react';
+import { Route } from 'react-router';
+
+const ReceivablesPage = lazy(() => import('./receivables-page').then((m) => ({ default: m.ReceivablesPage })));
+
 export function receivablesRoutes() {
-  return null;
+  return <Route path="/receber" element={<ReceivablesPage />} />;
 }

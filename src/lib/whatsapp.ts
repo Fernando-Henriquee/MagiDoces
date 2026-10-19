@@ -40,7 +40,7 @@ export function buildChargeMessage(group: CustomerGroup, options: ChargeOptions)
   lines.push('');
   lines.push(options.footer?.trim() || 'Qualquer dúvida, é só chamar. Agradecemos a preferência!');
   // Intl usa espaço não separável em "R$ 10,00"; troca por espaço comum para colar em qualquer app.
-  return lines.join('\n').replace(/ /g, ' ');
+  return lines.join('\n').replace(/\u00a0/g, ' ');
 }
 
 /** Normaliza telefone brasileiro para o formato internacional usado pelo wa.me. */

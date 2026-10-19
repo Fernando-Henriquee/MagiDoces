@@ -9,7 +9,7 @@ import {
   parseQuantity,
 } from './money';
 
-const nbsp = (text: string) => text.replace(/ /g, ' ');
+const nbsp = (text: string) => text.replace(/\u00a0/g, ' ');
 
 describe('formatBRL', () => {
   it('formata centavos em reais no padrão brasileiro', () => {
@@ -31,7 +31,7 @@ describe('parseBRL', () => {
     ['12,50', 1250],
     ['1.234,56', 123456],
     ['R$ 1.234,56', 123456],
-    ['R$ 15,00', 1500],
+    ['R$\u00a015,00', 1500],
     ['0,99', 99],
     ['12.50', 1250],
     ['1.234', 123400],

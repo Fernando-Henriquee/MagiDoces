@@ -39,6 +39,10 @@ function loadSecret(): string {
 }
 
 const dataDir = options.memory ? null : join(stateDir, 'pgdata');
+
+/** Token para comandos administrativos locais (ex.: npm run local:add-user). Só aceita conexões de 127.0.0.1. */
+const adminToken = randomBytes(24).toString('hex');
+writeFileSync(join(stateDir, 'admin-token'), adminToken, { mode: 0o600 });
 if (options.reset && dataDir && existsSync(dataDir)) {
   const { rmSync } = await import('node:fs');
   rmSync(dataDir, { recursive: true, force: true });
@@ -208,9 +212,38 @@ async function handleStorage(req: IncomingMessage, res: ServerResponse, url: URL
   }
 }
 
+async function handleLocalAdmin(req: IncomingMessage, res: ServerResponse, url: URL) {
+  if (req.headers['x-local-admin'] !== adminToken) return sendJson(res, 403, { message: 'Token administrativo local inválido' });
+  if (url.pathname === '/local-admin/users' && req.method === 'POST') {
+    const body = parseJson(await readBody(req)) as { email?: string; password?: string; name?: string; role?: string };
+    const email = (body.email ?? '').trim().toLowerCase();
+    const role = body.role ?? 'owner';
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return sendJson(res, 400, { message: 'E-mail inválido' });
+    if (!body.password || body.password.length < 8) return sendJson(res, 400, { message: 'A senha precisa ter pelo menos 8 caracteres' });
+    if (!['owner', 'editor', 'viewer'].includes(role)) return sendJson(res, 400, { message: 'Papel inválido (owner, editor ou viewer)' });
+    const userId = await auth.createUser(email, body.password, body.name?.trim() || undefined);
+    await db.admin((pg) =>
+      pg.query(
+        `insert into public.business_members (business_id, user_id, role) values ($1, $2, $3)
+         on conflict (business_id, user_id) do update set role = excluded.role`,
+        [seeded.businesses.main, userId, role],
+      ),
+    );
+    return sendJson(res, 201, { id: userId, email, role, business: 'Magi Doces (ambiente local)' });
+  }
+  return sendJson(res, 404, { message: 'Comando administrativo desconhecido' });
+}
+
 const server = createServer((req, res) => {
   const url = new URL(req.url ?? '/', `http://${req.headers.host ?? 'localhost'}`);
   if (req.method === 'OPTIONS') return send(res, 204, null);
+  if (url.pathname.startsWith('/local-admin/')) {
+    handleLocalAdmin(req, res, url).catch((error: unknown) => {
+      console.error(error);
+      if (!res.headersSent) sendJson(res, 500, { message: 'Erro interno do emulador' });
+    });
+    return;
+  }
   const route = url.pathname.startsWith('/auth/v1')
     ? handleAuth
     : url.pathname.startsWith('/rest/v1/')

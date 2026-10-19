@@ -22,7 +22,7 @@ export function formatDecimalBR(cents: number | bigint): string {
 /** Converte "1.234,56", "R$ 12,5", "12.50" ou "12" em centavos. Retorna null se inválido. */
 export function parseBRL(input: string | null | undefined): number | null {
   if (input === null || input === undefined) return null;
-  let text = input.replace(/R\$/gi, '').replace(/\s| /g, '').trim();
+  let text = input.replace(/R\$/gi, '').replace(/\s|\u00a0/g, '').trim();
   if (text === '') return null;
   let negative = false;
   if (text.startsWith('-')) {

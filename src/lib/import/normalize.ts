@@ -6,7 +6,7 @@ import type { CellValue } from './types';
 export function normalizeName(value: string | null | undefined): string {
   return (value ?? '')
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
     .replace(/\s+/g, ' ')
@@ -42,7 +42,7 @@ export function parseCellNumber(value: CellValue): number | null {
   if (value === null || value === undefined || typeof value === 'boolean') return null;
   if (typeof value === 'number') return Number.isFinite(value) ? value : null;
   if (value instanceof Date) return null;
-  const text = String(value).replace(/R\$/gi, '').replace(/\s| /g, '');
+  const text = String(value).replace(/R\$/gi, '').replace(/\s|\u00a0/g, '');
   if (text === '') return null;
   let normalized: string;
   if (text.includes(',')) {
