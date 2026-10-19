@@ -21,7 +21,7 @@ interface EntityPickerProps {
   options: PickerOption[];
   selectedId?: string | null;
   onSelect: (option: PickerOption) => void;
-  /** Ação de cadastro rápido com o texto pesquisado (ex.: novo cliente). */
+  /** Ação de cadastro rápido com o texto pesquisado (ex.: novo cliente). Oculta se já existe um item com o mesmo nome. */
   onCreate?: (text: string) => void;
   createLabel?: (text: string) => string;
   emptyText?: string;
@@ -64,7 +64,7 @@ export function EntityPicker({ open, onOpenChange, title, options, selectedId, o
             }}
           />
         </div>
-        {onCreate && query.trim() ? (
+        {onCreate && query.trim() && !options.some((option) => normalizeName(option.label) === normalizeName(query)) ? (
           <Button
             variant="outline"
             className="mb-2 w-full justify-start"

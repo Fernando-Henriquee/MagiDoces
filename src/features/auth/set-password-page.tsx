@@ -1,7 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Link } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,7 @@ type Values = z.infer<typeof passwordSchema>;
 /** Definição de senha após link de recuperação ou convite. */
 export function SetPasswordPage() {
   const { session, clearPasswordSetup } = useAuth();
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const form = useForm<Values>({ resolver: zodResolver(passwordSchema), defaultValues: { password: '', confirm: '' } });
 
@@ -49,7 +50,7 @@ export function SetPasswordPage() {
       return;
     }
     toast.success('Senha definida com sucesso.');
-    window.history.replaceState(null, '', '/');
+    navigate('/', { replace: true });
     clearPasswordSetup();
   });
 

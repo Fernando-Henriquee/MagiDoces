@@ -15,7 +15,7 @@ if (!email || !password) {
 const port = process.env.LOCAL_API_PORT ?? '54321';
 let token: string;
 try {
-  token = readFileSync(join(process.cwd(), '.local-backend', 'admin-token'), 'utf8').trim();
+  token = readFileSync(join(process.cwd(), '.local-backend', `admin-token-${port}`), 'utf8').trim();
 } catch {
   console.error('Ambiente local não encontrado. Rode "npm run dev:local" em outro terminal primeiro.');
   process.exit(1);

@@ -11,7 +11,8 @@ import { BusinessProvider, useMemberships } from '@/features/business/business-c
 import { env } from '@/lib/env';
 import { CACHE_MAX_AGE_MS, createAppQueryClient, createUserPersister, persistDehydrateOptions } from '@/lib/query-cache';
 import { AppRoutes } from './routes';
-import { ConfigProblemScreen, MembershipErrorScreen, NoAccessScreen, Splash } from './screens';
+import { useOnline } from '@/lib/connectivity';
+import { ConfigProblemScreen, MembershipErrorScreen, NoAccessScreen, OfflineWithoutDataScreen, Splash } from './screens';
 
 function PublicRoutes() {
   const location = useLocation();
@@ -27,7 +28,8 @@ function PublicRoutes() {
 
 function MembershipGate({ userId }: { userId: string }) {
   const memberships = useMemberships(userId);
-  if (memberships.isPending) return <Splash />;
+  const online = useOnline();
+  if (memberships.isPending) return online ? <Splash /> : <OfflineWithoutDataScreen />;
   if (memberships.isError && !memberships.data) return <MembershipErrorScreen error={memberships.error} onRetry={() => void memberships.refetch()} />;
   if (!memberships.data || memberships.data.length === 0) return <NoAccessScreen />;
   return (
@@ -43,12 +45,16 @@ function MembershipGate({ userId }: { userId: string }) {
 
 /** Cliente de consultas e cache local exclusivos do usuário logado. */
 function UserDataScope({ userId, children }: { userId: string; children: ReactNode }) {
+  // Um cliente e um cache por usuário (o componente também é remontado via key).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const queryClient = useMemo(() => createAppQueryClient(), [userId]);
   const persister = useMemo(() => createUserPersister(userId), [userId]);
   return (
     <PersistQueryClientProvider
       client={queryClient}
       persistOptions={{ persister, maxAge: CACHE_MAX_AGE_MS, buster: __APP_VERSION__, dehydrateOptions: persistDehydrateOptions }}
+      // Dados restaurados do aparelho nunca valem como atuais: revalida tudo assim que possível.
+      onSuccess={() => void queryClient.invalidateQueries()}
     >
       {children}
     </PersistQueryClientProvider>

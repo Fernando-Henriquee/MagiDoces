@@ -42,7 +42,7 @@ const dataDir = options.memory ? null : join(stateDir, 'pgdata');
 
 /** Token para comandos administrativos locais (ex.: npm run local:add-user). Só aceita conexões de 127.0.0.1. */
 const adminToken = randomBytes(24).toString('hex');
-writeFileSync(join(stateDir, 'admin-token'), adminToken, { mode: 0o600 });
+writeFileSync(join(stateDir, `admin-token-${options.port}`), adminToken, { mode: 0o600 });
 if (options.reset && dataDir && existsSync(dataDir)) {
   const { rmSync } = await import('node:fs');
   rmSync(dataDir, { recursive: true, force: true });
@@ -118,7 +118,7 @@ async function handleAuth(req: IncomingMessage, res: ServerResponse, url: URL) {
       const redirect = url.searchParams.get('redirect_to') ?? 'http://localhost:5173/redefinir-senha';
       const link = await auth.recoveryLink(body.email ?? '', redirect);
       if (link) {
-        writeFileSync(join(stateDir, 'last-recovery-link.txt'), link);
+        writeFileSync(join(stateDir, `last-recovery-link-${options.port}.txt`), link);
         console.log(`\n[e-mail simulado] Recuperação de senha para ${body.email}:\n${link}\n`);
       }
       return sendJson(res, 200, {});
@@ -215,21 +215,30 @@ async function handleStorage(req: IncomingMessage, res: ServerResponse, url: URL
 async function handleLocalAdmin(req: IncomingMessage, res: ServerResponse, url: URL) {
   if (req.headers['x-local-admin'] !== adminToken) return sendJson(res, 403, { message: 'Token administrativo local inválido' });
   if (url.pathname === '/local-admin/users' && req.method === 'POST') {
-    const body = parseJson(await readBody(req)) as { email?: string; password?: string; name?: string; role?: string };
+    const body = parseJson(await readBody(req)) as { email?: string; password?: string; name?: string; role?: string; business_name?: string };
     const email = (body.email ?? '').trim().toLowerCase();
     const role = body.role ?? 'owner';
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return sendJson(res, 400, { message: 'E-mail inválido' });
     if (!body.password || body.password.length < 8) return sendJson(res, 400, { message: 'A senha precisa ter pelo menos 8 caracteres' });
     if (!['owner', 'editor', 'viewer'].includes(role)) return sendJson(res, 400, { message: 'Papel inválido (owner, editor ou viewer)' });
     const userId = await auth.createUser(email, body.password, body.name?.trim() || undefined);
+    // Com business_name, cria um negócio novo e isolado (usado pelos testes E2E).
+    const businessName = body.business_name?.trim();
+    const businessId = businessName
+      ? await db.admin(async (pg) => {
+          const created = await pg.query<{ id: string }>('insert into public.businesses (name) values ($1) returning id', [businessName]);
+          await pg.query('select private.seed_business_defaults($1)', [created.rows[0]!.id]);
+          return created.rows[0]!.id;
+        })
+      : seeded.businesses.main!;
     await db.admin((pg) =>
       pg.query(
         `insert into public.business_members (business_id, user_id, role) values ($1, $2, $3)
          on conflict (business_id, user_id) do update set role = excluded.role`,
-        [seeded.businesses.main, userId, role],
+        [businessId, userId, role],
       ),
     );
-    return sendJson(res, 201, { id: userId, email, role, business: 'Magi Doces (ambiente local)' });
+    return sendJson(res, 201, { id: userId, email, role, business_id: businessId, business: businessName ?? 'Magi Doces (ambiente local)' });
   }
   return sendJson(res, 404, { message: 'Comando administrativo desconhecido' });
 }

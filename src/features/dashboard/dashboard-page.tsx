@@ -63,7 +63,7 @@ export function DashboardPage() {
       ) : null}
 
       {s ? (
-        <div className="space-y-5">
+        <div className={summary.isPlaceholderData ? 'space-y-5 opacity-60 transition-opacity' : 'space-y-5 transition-opacity'} aria-busy={summary.isPlaceholderData}>
           <Section title="Vendas no período">
             <Stat label="Faturamento" cents={s.revenue_cents} hint={`${s.sales_count} ${s.sales_count === 1 ? 'venda' : 'vendas'}${s.discounts_cents ? ` · descontos ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(s.discounts_cents / 100)}` : ''}`} />
             <Stat label="Recebido" cents={s.net_received_cents} tone="positive" hint={s.refunds_cents ? 'Já descontados os reembolsos' : 'Dinheiro que entrou no período'} />

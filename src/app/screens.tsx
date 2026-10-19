@@ -1,4 +1,4 @@
-import { LogOut, ShieldAlert } from 'lucide-react';
+import { LogOut, ShieldAlert, WifiOff } from 'lucide-react';
 import { Link } from 'react-router';
 import { BrandMark } from '@/components/layout/brand';
 import { Page, PageHeader } from '@/components/layout/page';
@@ -13,6 +13,19 @@ export function Splash() {
         <BrandMark className="size-14 animate-pulse rounded-2xl" />
         <p className="font-display text-xl text-ink-soft">Magi Doces</p>
       </div>
+    </div>
+  );
+}
+
+export function OfflineWithoutDataScreen() {
+  return (
+    <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-3 px-4 text-center">
+      <WifiOff className="size-10 text-warning" aria-hidden />
+      <h1 className="text-2xl font-semibold">Sem conexão</h1>
+      <p className="text-sm text-ink-soft">
+        Ainda não há dados salvos neste aparelho para mostrar sem internet (ou eles passaram de 72 horas e foram apagados por segurança).
+        Conecte-se para continuar.
+      </p>
     </div>
   );
 }

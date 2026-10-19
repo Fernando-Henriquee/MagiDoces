@@ -1,6 +1,7 @@
 # dependências e builds
 node_modules/
 dist/
+dist-e2e/
 dev-dist/
 coverage/
 *.tsbuildinfo

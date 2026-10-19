@@ -3,6 +3,10 @@ import { useSyncExternalStore } from 'react';
 import { env } from './env';
 import { OfflineError } from './errors';
 
+// O TanStack Query parte de "online" e só muda com eventos de conexão; quem abre o
+// app já sem internet não recebe evento algum. Sincroniza com o estado real.
+if (typeof navigator !== 'undefined') onlineManager.setOnline(navigator.onLine);
+
 /** Estado de conexão do navegador (sinal rápido, não é confirmação). */
 export function useOnline(): boolean {
   return useSyncExternalStore(

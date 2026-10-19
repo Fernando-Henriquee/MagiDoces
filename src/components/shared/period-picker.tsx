@@ -47,9 +47,16 @@ export function PeriodPicker({ period, onChange, className }: { period: Period; 
             type="button"
             role="radio"
             aria-checked={period.kind === kind.value}
-            onClick={() =>
-              onChange(kind.value === 'custom' ? { kind: 'custom', from: period.from, to: period.to } : periodFor(kind.value, period.kind === 'custom' ? today() : period.from))
-            }
+            onClick={() => {
+              if (kind.value === 'custom') {
+                onChange({ kind: 'custom', from: period.from, to: period.to });
+                return;
+              }
+              // Referência: hoje, se estiver no período exibido; senão, o início dele.
+              const now = today();
+              const reference = now >= period.from && now <= period.to ? now : period.from;
+              onChange(periodFor(kind.value, reference));
+            }}
             className={cn(
               'h-8 flex-1 rounded-lg px-3 text-sm font-medium text-muted transition-colors hover:text-ink',
               period.kind === kind.value && 'bg-panel text-ink shadow-sm',

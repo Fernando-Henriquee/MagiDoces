@@ -46,7 +46,7 @@ const safeStorage = {
 };
 
 export function createUserPersister(userId: string) {
-  return createAsyncStoragePersister({ storage: safeStorage, key: `cache:${CACHE_VERSION}:${userId}`, throttleTime: 1000 });
+  return createAsyncStoragePersister({ storage: safeStorage, key: `cache:${CACHE_VERSION}:${userId}`, throttleTime: 300 });
 }
 
 export function createAppQueryClient() {

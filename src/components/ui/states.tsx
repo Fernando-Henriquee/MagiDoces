@@ -1,6 +1,7 @@
-import { CircleAlert, LoaderCircle, RefreshCw } from 'lucide-react';
+import { CircleAlert, LoaderCircle, RefreshCw, WifiOff } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/cn';
+import { useOnline } from '@/lib/connectivity';
 import { describeError } from '@/lib/errors';
 import { Button } from './button';
 
@@ -17,7 +18,18 @@ export function Skeleton({ className }: { className?: string }) {
   return <div aria-hidden className={cn('animate-pulse rounded-lg bg-line/70', className)} />;
 }
 
+/** Carregamento. Sem conexão e sem dados salvos, explica em vez de carregar para sempre. */
 export function LoadingBlock({ rows = 4 }: { rows?: number }) {
+  const online = useOnline();
+  if (!online) {
+    return (
+      <EmptyState
+        icon={<WifiOff />}
+        title="Sem conexão"
+        description="Esta tela ainda não tem dados salvos neste aparelho. Conecte-se à internet para carregá-la."
+      />
+    );
+  }
   return (
     <div className="space-y-2" role="status" aria-label="Carregando">
       {Array.from({ length: rows }, (_, index) => (
