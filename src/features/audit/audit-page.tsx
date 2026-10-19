@@ -15,7 +15,7 @@ import type { AuditRow } from '@/data/types';
 import { useBusiness } from '@/features/business/business-context';
 import { formatDateTimeBR } from '@/lib/dates';
 import { AuditDetails } from './audit-details';
-import { ACTION_OPTIONS, actionTone, describeAction, ENTITY_OPTIONS, entityLink, zonedRange } from './audit-format';
+import { ACTION_OPTIONS, actionTone, describeAction, ENTITY_OPTIONS, entityLink, summarizeAudit, zonedRange } from './audit-format';
 
 export function AuditPage() {
   const { business, can } = useBusiness();
@@ -50,7 +50,15 @@ export function AuditPage() {
     {
       key: 'action',
       header: 'Operação',
-      cell: (row) => <Badge tone={actionTone(row.action)}>{describeAction(row)}</Badge>,
+      cell: (row) => {
+        const summary = summarizeAudit(row);
+        return (
+          <div className="min-w-0">
+            <Badge tone={actionTone(row.action)}>{describeAction(row)}</Badge>
+            {summary ? <p className="mt-1 max-w-md truncate text-xs text-ink-soft">{summary}</p> : null}
+          </div>
+        );
+      },
       sortValue: (row) => describeAction(row),
     },
     { key: 'actor', header: 'Responsável', cell: (row) => author(row), sortValue: (row) => author(row) },
@@ -131,7 +139,7 @@ export function AuditPage() {
             columns={columns}
             getRowId={(row) => String(row.id)}
             caption="Histórico de auditoria"
-            searchText={(row) => `${describeAction(row)} ${author(row)} ${JSON.stringify(row.details)}`}
+            searchText={(row) => `${describeAction(row)} ${summarizeAudit(row) ?? ''} ${author(row)} ${JSON.stringify(row.details)}`}
             searchPlaceholder="Pesquisar no histórico…"
             initialSort={{ key: 'when', direction: 'desc' }}
             emptyTitle="Nenhuma operação no período"
@@ -139,26 +147,29 @@ export function AuditPage() {
             mobileCard={(row) => {
               const href = entityLink(row, links);
               return (
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <Badge tone={actionTone(row.action)}>{describeAction(row)}</Badge>
                     <span className="num text-xs text-muted">{formatDateTimeBR(row.occurred_at, business.timezone)}</span>
                   </div>
-                  <p className="text-xs text-ink-soft">
+                  {summarizeAudit(row) ? <p className="text-sm text-ink">{summarizeAudit(row)}</p> : null}
+                  <p className="text-xs text-muted">
                     <History className="mr-1 inline size-3" aria-hidden />
                     {author(row)}
                   </p>
-                  <details>
-                    <summary className="cursor-pointer text-xs font-medium text-accent-ink">Ver detalhes</summary>
-                    <div className="mt-2">
-                      <AuditDetails details={row.details} timeZone={business.timezone} profiles={names} />
-                    </div>
-                  </details>
-                  {href ? (
-                    <Link to={href} className="inline-flex items-center gap-1 text-xs font-medium text-accent-ink">
-                      Abrir registro <ExternalLink className="size-3" aria-hidden />
-                    </Link>
-                  ) : null}
+                  <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-1">
+                    <details className="min-w-0 flex-1">
+                      <summary className="cursor-pointer text-xs font-medium text-accent-ink">Ver detalhes</summary>
+                      <div className="mt-2">
+                        <AuditDetails details={row.details} timeZone={business.timezone} profiles={names} />
+                      </div>
+                    </details>
+                    {href ? (
+                      <Link to={href} className="inline-flex items-center gap-1 text-xs font-medium text-accent-ink">
+                        Abrir registro <ExternalLink className="size-3" aria-hidden />
+                      </Link>
+                    ) : null}
+                  </div>
                 </div>
               );
             }}

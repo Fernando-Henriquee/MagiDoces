@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { describeAction, describeChanges, describeRecord, entityLink, formatAuditValue, zonedDayStart, zonedRange } from './audit-format';
+import { describeAction, describeChanges, describeRecord, entityLink, formatAuditValue, zonedDayStart, zonedRange, summarizeAudit } from './audit-format';
 
 const nbsp = (text: string) => text.replace(/\u00a0/g, ' ');
 const noLinks = { payments: {}, billPayments: {} };
@@ -85,5 +85,17 @@ describe('formatação de valores', () => {
       ['Valor', 'R$ 24,00'],
       ['Data do pagamento', '01/10/2026'],
     ]);
+  });
+});
+
+describe('summarizeAudit', () => {
+  const nbsp = (text: string | null) => text?.replace(/ /g, ' ') ?? null;
+  it('resume venda, recebimento, vencimento e cancelamento', () => {
+    expect(nbsp(summarizeAudit({ action: 'sale.created', details: { venda: { cliente: 'Maria', total_cents: 3900, itens: [{}, {}] } } }))).toBe('Maria · R$ 39,00 · 2 itens');
+    expect(nbsp(summarizeAudit({ action: 'payment.created', details: { registro: { amount_cents: 1250, method: 'pix', paid_on: '2026-10-19' } } }))).toBe('R$ 12,50 · PIX · 19/10/2026');
+    expect(summarizeAudit({ action: 'sale.due_date_changed', details: { alteracoes: { due_date: { de: '2026-10-10', para: null } } } })).toBe('Vencimento 10/10/2026 → sem vencimento');
+    expect(summarizeAudit({ action: 'sale.cancelled', details: { alteracoes: { cancel_reason: { de: null, para: 'Desistiu' } } } })).toBe('Motivo: Desistiu');
+    expect(nbsp(summarizeAudit({ action: 'sale.updated', details: { antes: { cliente: 'Ana', total_cents: 1000 }, depois: { cliente: 'Ana', total_cents: 1500 } } }))).toBe('Ana · total R$ 10,00 → R$ 15,00');
+    expect(summarizeAudit({ action: 'desconhecida', details: {} })).toBeNull();
   });
 });

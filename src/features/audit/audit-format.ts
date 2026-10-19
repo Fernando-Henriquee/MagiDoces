@@ -282,3 +282,84 @@ export function describeRecord(record: Json, timeZone: string, profiles: Record<
     .filter(([key, value]) => !HIDDEN_FIELDS.has(key) && value !== null && value !== '' && !Array.isArray(value) && typeof value !== 'object')
     .map(([key, value]) => ({ key, label: fieldLabel(key), value: formatAuditValue(key, value, timeZone, profiles) }));
 }
+
+function money(value: unknown): string | null {
+  return typeof value === 'number' ? formatBRL(value) : null;
+}
+
+function change(details: Json, key: string): { de: unknown; para: unknown } | null {
+  const changes = asObject(details.alteracoes);
+  const entry = changes ? asObject(changes[key]) : null;
+  return entry ? { de: entry.de, para: entry.para } : null;
+}
+
+/** Resumo de uma linha: sobre o quê foi a operação (cliente, valor, motivo…). */
+export function summarizeAudit(row: Pick<AuditRow, 'action' | 'details'>): string | null {
+  const details = row.details as Json;
+  const record = asObject(details.registro);
+  const parts = (...values: Array<string | null | undefined | false>) => values.filter(Boolean).join(' · ') || null;
+  switch (row.action) {
+    case 'sale.created': {
+      const sale = asObject(details.venda);
+      const items = Array.isArray(sale?.itens) ? sale.itens.length : 0;
+      return sale ? parts(String(sale.cliente ?? 'Sem cliente'), money(sale.total_cents), `${items} ${items === 1 ? 'item' : 'itens'}`) : null;
+    }
+    case 'sale.updated': {
+      const before = asObject(details.antes);
+      const after = asObject(details.depois);
+      if (!after) return null;
+      const total = before && before.total_cents !== after.total_cents ? `total ${money(before.total_cents)} → ${money(after.total_cents)}` : money(after.total_cents);
+      return parts(String(after.cliente ?? 'Sem cliente'), total);
+    }
+    case 'sale.cancelled':
+    case 'purchase.cancelled':
+    case 'expense.cancelled': {
+      const reason = change(details, 'cancel_reason')?.para;
+      return reason ? `Motivo: ${String(reason)}` : null;
+    }
+    case 'sale.due_date_changed': {
+      const due = change(details, 'due_date');
+      if (!due) return null;
+      const show = (value: unknown) => (value ? formatDateBR(String(value)) : 'sem vencimento');
+      return `Vencimento ${show(due.de)} → ${show(due.para)}`;
+    }
+    case 'payment.created':
+    case 'payment.refunded':
+    case 'bill_payment.created':
+      return record
+        ? parts(money(record.amount_cents), record.method ? paymentMethodLabel(String(record.method)) : null, record.paid_on ? formatDateBR(String(record.paid_on)) : record.due_date ? `vence ${formatDateBR(String(record.due_date))}` : null)
+        : null;
+    case 'bill_payment.paid': {
+      const paidOn = change(details, 'paid_on')?.para;
+      return paidOn ? `Pago em ${formatDateBR(String(paidOn))}` : null;
+    }
+    case 'payment.voided':
+    case 'bill_payment.voided': {
+      const reason = change(details, 'void_reason')?.para;
+      return reason ? `Motivo: ${String(reason)}` : null;
+    }
+    case 'purchase.created': {
+      const purchase = asObject(details.compra);
+      return purchase ? parts(String(purchase.description ?? ''), money(purchase.total_cents)) : null;
+    }
+    case 'expense.created':
+      return record ? parts(String(record.description ?? ''), money(record.amount_cents)) : null;
+    case 'import.completed':
+      return parts(String(details.arquivo ?? ''), typeof details.importadas === 'number' ? `${details.importadas} importadas` : null, typeof details.duplicadas === 'number' && details.duplicadas > 0 ? `${details.duplicadas} duplicadas` : null);
+    case 'member.created':
+    case 'member.deleted': {
+      const roles: Record<string, string> = { owner: 'Sócia/administradora', editor: 'Operação', viewer: 'Somente leitura' };
+      return record?.role ? `Papel: ${roles[String(record.role)] ?? String(record.role)}` : null;
+    }
+    case 'member.updated': {
+      const role = change(details, 'role');
+      return role ? `Papel alterado: ${String(role.de)} → ${String(role.para)}` : null;
+    }
+    case 'business.updated': {
+      const changes = asObject(details.alteracoes);
+      return changes ? `Alterado: ${Object.keys(changes).map(fieldLabel).join(', ')}` : null;
+    }
+    default:
+      return null;
+  }
+}

@@ -1,5 +1,5 @@
-import { FileText, Paperclip, Trash2 } from 'lucide-react';
-import { useId, useState } from 'react';
+import { FileText, Paperclip, Trash2, X } from 'lucide-react';
+import { useId, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { BUCKET_RULES, useSignedUrl, validateFile } from '@/data/storage';
 
@@ -41,6 +41,7 @@ interface ReceiptFieldProps {
 /** Envio opcional de comprovante (PDF ou imagem). */
 export function ReceiptField({ currentPath, onRemoveCurrent, file, onFileChange }: ReceiptFieldProps) {
   const id = useId();
+  const input = useRef<HTMLInputElement>(null);
   const [error, setError] = useState<string | null>(null);
   const rule = BUCKET_RULES.receipts;
   return (
@@ -57,12 +58,14 @@ export function ReceiptField({ currentPath, onRemoveCurrent, file, onFileChange 
         </div>
       ) : null}
       <div className="flex flex-wrap items-center gap-2">
+        {/* Botão próprio (em português) no lugar do seletor nativo, que segue o idioma do navegador. */}
         <input
+          ref={input}
           id={id}
           type="file"
+          tabIndex={-1}
           accept={rule.types.join(',')}
-          aria-describedby={`${id}-hint`}
-          className="block w-full text-sm text-ink-soft file:mr-3 file:h-9 file:cursor-pointer file:rounded-lg file:border file:border-line-strong file:bg-panel file:px-3 file:text-sm file:font-medium file:text-ink hover:file:bg-subtle"
+          className="sr-only"
           onChange={(event) => {
             const selected = event.target.files?.[0] ?? null;
             if (!selected) {
@@ -76,6 +79,23 @@ export function ReceiptField({ currentPath, onRemoveCurrent, file, onFileChange 
             if (problem) event.target.value = '';
           }}
         />
+        <Button type="button" variant="outline" size="sm" aria-describedby={`${id}-hint`} onClick={() => input.current?.click()}>
+          <Paperclip /> {file ? 'Trocar arquivo' : currentPath ? 'Enviar outro comprovante' : 'Escolher arquivo'}
+        </Button>
+        {file ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label="Remover arquivo escolhido"
+            onClick={() => {
+              onFileChange(null);
+              if (input.current) input.current.value = '';
+            }}
+          >
+            <X />
+          </Button>
+        ) : null}
       </div>
       {file ? (
         <p className="inline-flex items-center gap-1.5 text-xs text-ink-soft">

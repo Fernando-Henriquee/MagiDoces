@@ -48,7 +48,9 @@ export default defineConfig({
         // (dados financeiros) NUNCA são cacheadas aqui: o cache de leitura fica no
         // IndexedDB com validade limitada e é apagado no logout.
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2,webmanifest}'],
-        globIgnores: ['**/xlsx-*.js'],
+        // SheetJS (só para importar/exportar) e subconjuntos de fontes não usados em português
+        // ficam fora da instalação; são baixados sob demanda, com conexão, se necessários.
+        globIgnores: ['**/xlsx-*.js', '**/*-{cyrillic,cyrillic-ext,greek,greek-ext,vietnamese}-*.woff2'],
         navigateFallback: '/index.html',
         cleanupOutdatedCaches: true,
         runtimeCaching: [],
