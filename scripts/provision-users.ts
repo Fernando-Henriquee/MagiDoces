@@ -13,7 +13,8 @@ import { parseArgs } from 'node:util';
  *   npm run provision -- --business "Magi Doces" \
  *     --owner "socia1@exemplo.com:Nome 1" --owner "socia2@exemplo.com:Nome 2"
  *
- * Também lê as variáveis de um arquivo .env.provision (fora do git), se existir.
+ * Também lê as variáveis de .env.provision ou .env.local (ambos fora do git), se
+ * existirem — inclusive os nomes da integração Supabase ↔ Vercel.
  * A chave service_role IGNORA a RLS: nunca a coloque no frontend, na Vercel ou no git.
  */
 
@@ -29,6 +30,8 @@ function loadEnvFile(path: string) {
 }
 
 loadEnvFile('.env.provision');
+// Também aceita o .env.local gerado pela integração Supabase ↔ Vercel (fora do git).
+loadEnvFile('.env.local');
 
 const { values } = parseArgs({
   options: {
@@ -39,7 +42,7 @@ const { values } = parseArgs({
   },
 });
 
-const url = (process.env.SUPABASE_URL ?? '').replace(/\/+$/, '');
+const url = (process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '').replace(/\/+$/, '');
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 const appUrl = (process.env.APP_URL ?? '').replace(/\/+$/, '');
 
