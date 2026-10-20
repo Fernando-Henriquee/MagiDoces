@@ -12,8 +12,10 @@ export const E2E_APP = 'http://127.0.0.1:4183';
 export default defineConfig({
   testDir: 'tests/e2e',
   timeout: 60_000,
-  expect: { timeout: 10_000 },
+  expect: { timeout: 15_000 },
   fullyParallel: true,
+  // Paralelismo moderado: cada teste abre um navegador e o build é servido localmente.
+  workers: process.env.CI ? 2 : 3,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list'], ['html', { open: 'never' }]],
   use: {

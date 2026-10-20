@@ -28,7 +28,8 @@ test('contas a receber: dia 10, agrupamento por cliente e cobrança para WhatsAp
 
   await navigate(page, 'A receber');
   await expect(page.getByRole('heading', { name: 'Contas a receber' })).toBeVisible();
-  expect(cents(await page.getByText('Total em aberto').locator('..').locator('..').innerText())).toBe(3600);
+  // A tela pode mostrar por um instante o valor salvo antes de atualizar: espera o valor final.
+  await expect.poll(async () => cents(await page.getByText('Total em aberto').locator('..').locator('..').innerText())).toBe(3600);
 
   await page.getByRole('radio', { name: /^Dia 10/ }).click();
   await expect(page.getByRole('button', { name: customer, exact: true })).toBeVisible();

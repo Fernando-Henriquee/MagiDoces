@@ -18,6 +18,17 @@ Leva cerca de 30 minutos. Nada aqui exige expor segredos no código.
    Ela só é usada para backup/restauração (docs/BACKUP.md).
 5. Plano: o gratuito funciona para começar. Para dados financeiros reais, o plano
    **Pro** é recomendado por ter **backups diários automáticos** (veja docs/BACKUP.md).
+6. Em **Security** (na criação do projeto):
+
+   | Opção | Escolha | Por quê |
+   |---|---|---|
+   | **Enable Data API** | ✅ ligado | O app usa essa API (supabase-js). |
+   | **Automatically expose new tables** | ❌ **desligado** | Nenhuma tabela fica acessível por padrão; as migrations concedem explicitamente só o necessário. |
+   | **Enable automatic RLS** | ✅ ligado | Toda tabela nova nasce com RLS (as migrations já ligam em todas). |
+
+   O sistema é testado nos dois modos de "expose new tables"
+   (`tests/db/no-default-grants.test.ts`) e o emulador local roda no modo
+   recomendado (desligado).
 
 Anote, em **Project Settings → API**:
 
@@ -50,6 +61,7 @@ políticas. Não é necessário criar nada manualmente no painel.
    6. `20261019000600_views_reports.sql`
    7. `20261019000700_storage_seed.sql`
    8. `20261019000800_fixes.sql`
+   9. `20261019000900_explicit_grants.sql`
 3. Cada execução deve terminar com "Success". Se uma falhar, **pare** e corrija
    antes de seguir (não pule arquivos).
 

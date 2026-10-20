@@ -1,5 +1,5 @@
 import type { PGlite } from '@electric-sql/pglite';
-import { createTestDb } from './harness';
+import { createTestDb, type TestDbOptions } from './harness';
 
 export type Row = Record<string, unknown>;
 
@@ -50,8 +50,8 @@ function buildSession(db: PGlite): Session {
 export class TestEnv {
   private constructor(readonly db: PGlite) {}
 
-  static async create(): Promise<TestEnv> {
-    return new TestEnv(await createTestDb());
+  static async create(options?: TestDbOptions): Promise<TestEnv> {
+    return new TestEnv(await createTestDb(options));
   }
 
   async close() {
@@ -98,6 +98,21 @@ export class TestEnv {
         await this.db.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ role: 'anon' })]);
         await this.db.exec('set local role anon');
       }
+      const result = await fn(buildSession(this.db));
+      await this.db.exec('commit');
+      return result;
+    } catch (error) {
+      await this.db.exec('rollback').catch(() => undefined);
+      throw error;
+    }
+  }
+
+  /** Executa como service_role (chave administrativa do script de provisionamento). */
+  async serviceRole<T>(fn: (session: Session) => Promise<T>): Promise<T> {
+    await this.db.exec('begin');
+    try {
+      await this.db.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify({ role: 'service_role' })]);
+      await this.db.exec('set local role service_role');
       const result = await fn(buildSession(this.db));
       await this.db.exec('commit');
       return result;

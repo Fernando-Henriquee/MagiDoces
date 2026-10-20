@@ -13,10 +13,20 @@ export function migrationFiles(): string[] {
     .sort();
 }
 
+export interface TestDbOptions {
+  /**
+   * Simula a opção "Automatically expose new tables" do Supabase.
+   * true (padrão): privilégios automáticos para anon/authenticated/service_role.
+   * false: nenhum privilégio automático; só valem as concessões das migrations.
+   */
+  defaultGrants?: boolean;
+}
+
 /** Cria um PostgreSQL em memória com o stub do Supabase e todas as migrations. */
-export async function createTestDb(): Promise<PGlite> {
+export async function createTestDb(options: TestDbOptions = {}): Promise<PGlite> {
   const db = new PGlite();
   await db.exec(readFileSync(join(here, 'supabase-stub.sql'), 'utf8'));
+  if (options.defaultGrants !== false) await db.exec(readFileSync(join(here, 'supabase-default-grants.sql'), 'utf8'));
   for (const file of migrationFiles()) {
     try {
       await db.exec(readFileSync(join(migrationsDir, file), 'utf8'));
