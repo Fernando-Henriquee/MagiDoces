@@ -41,7 +41,10 @@ export function ConfigProblemScreen({ problems }: { problems: string[] }) {
           <li key={problem}>{problem}</li>
         ))}
       </ul>
-      <p className="mt-4 text-sm text-muted">Consulte o README (seção “Configuração”) e o arquivo .env.example.</p>
+      <p className="mt-4 text-sm text-muted">
+        Na Vercel, cadastre as variáveis em Settings → Environment Variables e faça um novo deploy (Redeploy). Passo a passo em
+        docs/VERCEL.md.
+      </p>
     </div>
   );
 }

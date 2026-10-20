@@ -3,7 +3,7 @@ import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
-  define: { __APP_VERSION__: JSON.stringify('test') },
+  define: { __APP_VERSION__: JSON.stringify('test'), __VERCEL_ENV__: JSON.stringify('') },
   plugins: [react()],
   resolve: {
     alias: {

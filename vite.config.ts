@@ -9,7 +9,13 @@ import pkg from './package.json' with { type: 'json' };
 const appVersion = `${pkg.version}+${(process.env.VERCEL_GIT_COMMIT_SHA ?? 'dev').slice(0, 7)}`;
 
 export default defineConfig({
-  define: { __APP_VERSION__: JSON.stringify(appVersion) },
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+    __VERCEL_ENV__: JSON.stringify(process.env.VERCEL_ENV ?? ''),
+  },
+  // Só variáveis PÚBLICAS: as do app (VITE_) e as públicas da integração Supabase ↔ Vercel
+  // (NEXT_PUBLIC_). Nunca adicione prefixos como SUPABASE_ ou POSTGRES_ (são segredos).
+  envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
   plugins: [
     react(),
     tailwindcss(),
