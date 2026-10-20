@@ -1,10 +1,10 @@
-import { ArrowLeft, Ban, CalendarClock, CheckCheck, HandCoins, Pencil, Undo2 } from 'lucide-react';
+import { ArrowLeft, Ban, CalendarClock, CheckCheck, HandCoins, Link2, Pencil, Undo2 } from 'lucide-react';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { ChargeButton } from '@/components/shared/charge-dialog';
 import { Money } from '@/components/shared/money';
 import { ReasonDialog } from '@/components/shared/reason-dialog';
-import { SaleStatusBadge } from '@/components/shared/sale-status';
+import { SaleStatusBadge, SelfServiceBadges } from '@/components/shared/sale-status';
 import { Page, PageHeader } from '@/components/layout/page';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,11 +14,13 @@ import { Field } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { EmptyState, ErrorState, LoadingBlock } from '@/components/ui/states';
 import { useCancelSale, useChangeDueDate, useConfirmPending, useReceivables, useSale, useSaleAudit, useVoidPayment } from '@/data/sales';
+import { useReviewSale } from '@/data/storefront';
 import { paymentMethodLabel, type PaymentRow } from '@/data/types';
 import { useBusiness } from '@/features/business/business-context';
 import { formatDateBR, formatDateTimeBR } from '@/lib/dates';
 import { formatBRL, formatQuantity } from '@/lib/money';
 import { groupByCustomer } from '@/lib/receivables';
+import { formatPhoneBR } from '@/lib/whatsapp';
 import { PaymentDialog } from './payment-dialog';
 
 const AUDIT_LABELS: Record<string, string> = {
@@ -29,7 +31,11 @@ const AUDIT_LABELS: Record<string, string> = {
   'payment.created': 'Recebimento registrado',
   'payment.refunded': 'Reembolso registrado',
   'payment.voided': 'Lançamento estornado',
+  'sale.reviewed': 'Revisada',
+  'sale.customer_reported_paid': 'Cliente avisou pelo link que pagou',
 };
+
+const PAYMENT_CHOICE_LABELS = { now: 'agora (PIX)', due_day: 'no dia padrão de vencimento', date: 'em data escolhida' } as const;
 
 function costSourceLabel(source: string | null) {
   if (source === 'recipe') return 'receita';
@@ -48,6 +54,7 @@ export function SaleDetailPage() {
   const voidPayment = useVoidPayment();
   const changeDue = useChangeDueDate();
   const confirmPending = useConfirmPending();
+  const review = useReviewSale();
   const [paying, setPaying] = useState<'receipt' | 'refund' | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [paymentAction, setPaymentAction] = useState<'void' | 'refund'>('refund');
@@ -76,6 +83,7 @@ export function SaleDetailPage() {
           <span className="flex flex-wrap items-center gap-2">
             Venda de {formatDateBR(sale.sale_date)}
             <SaleStatusBadge sale={sale} />
+            <SelfServiceBadges sale={sale} />
           </span>
         }
         description={
@@ -89,6 +97,7 @@ export function SaleDetailPage() {
             )}
             {sale.due_date ? <span>Vencimento {formatDateBR(sale.due_date)}</span> : <span>Sem vencimento</span>}
             {sale.source === 'import' ? <Badge tone="info">importada</Badge> : null}
+            {sale.source === 'self_service' ? <Badge tone="accent">anotada pela cliente</Badge> : null}
           </span>
         }
         actions={
@@ -114,6 +123,38 @@ export function SaleDetailPage() {
         <div role="status" className="mb-4 rounded-lg border border-line-strong bg-subtle px-4 py-3 text-sm">
           <p className="font-medium">Venda cancelada em {formatDateTimeBR(sale.cancelled_at, business.timezone)}.</p>
           <p className="text-muted">Motivo: {sale.cancel_reason}</p>
+        </div>
+      ) : null}
+
+      {sale.source === 'self_service' && sale.self_service_contact ? (
+        <div role="status" className="mb-4 space-y-2 rounded-lg border border-accent/60 bg-accent-soft px-4 py-3 text-sm text-ink">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <p className="flex items-start gap-2">
+              <Link2 className="mt-0.5 size-4 shrink-0 text-accent-ink" aria-hidden />
+              <span>
+                <strong>Anotada pela própria cliente no link de compras.</strong> Ela se identificou como “{sale.self_service_contact.name}”,{' '}
+                {formatPhoneBR(sale.self_service_contact.phone)}, e escolheu pagar {PAYMENT_CHOICE_LABELS[sale.self_service_contact.payment]}.
+                {sale.self_service_review_pending ? ' Confira produtos e quantidades: edite ou cancele se algo não bater.' : ''}
+              </span>
+            </p>
+            {writable && sale.self_service_review_pending ? (
+              <Button size="sm" variant="outline" loading={review.isPending} onClick={() => review.mutate({ saleId: sale.id })}>
+                <CheckCheck /> Marcar como revisada
+              </Button>
+            ) : null}
+          </div>
+          {sale.customer_reported_paid_at && sale.balance_cents > 0 && active ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-accent/40 pt-2">
+              <p>
+                A cliente avisou em {formatDateTimeBR(sale.customer_reported_paid_at, business.timezone)} que já pagou. Confira no banco e registre o recebimento.
+              </p>
+              {writable ? (
+                <Button size="sm" onClick={() => setPaying('receipt')}>
+                  <HandCoins /> Registrar recebimento
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
 
@@ -242,10 +283,14 @@ export function SaleDetailPage() {
           <ol className="divide-y divide-line px-4">
             {audit.data.map((entry) => (
               <li key={entry.id} className="flex flex-wrap justify-between gap-2 py-2 text-sm">
-                <span>{AUDIT_LABELS[entry.action] ?? entry.action}</span>
+                <span>
+                  {entry.action === 'sale.created' && sale.source === 'self_service'
+                    ? 'Anotada pela cliente no link de compras'
+                    : (AUDIT_LABELS[entry.action] ?? entry.action)}
+                </span>
                 <span className="text-xs text-muted">
                   {formatDateTimeBR(entry.occurred_at, business.timezone)}
-                  {entry.actor_name ? ` · ${entry.actor_name}` : ''}
+                  {entry.actor_name ? ` · ${entry.actor_name}` : entry.actor_id === null && sale.source === 'self_service' ? ' · pela cliente' : ''}
                 </span>
               </li>
             ))}

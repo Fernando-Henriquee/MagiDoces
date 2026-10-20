@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, Info, Plus } from 'lucide-react';
+import { ArrowRight, CalendarDays, Info, Link2, Plus } from 'lucide-react';
 import { Link } from 'react-router';
 import { Freshness } from '@/components/shared/freshness';
 import { Money } from '@/components/shared/money';
@@ -12,6 +12,7 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { EmptyState, ErrorState, LoadingBlock, Skeleton } from '@/components/ui/states';
 import { useDashboard } from '@/data/dashboard';
 import { useReceivables, useSales } from '@/data/sales';
+import { usePendingReviewCount } from '@/data/storefront';
 import { useBusiness } from '@/features/business/business-context';
 import { formatDateBR } from '@/lib/dates';
 import { GettingStarted } from './getting-started';
@@ -31,6 +32,7 @@ export function DashboardPage() {
   const summary = useDashboard(period.from, period.to);
   const recent = useSales({ limit: 6, status: 'all' });
   const receivables = useReceivables();
+  const toReview = usePendingReviewCount();
   const s = summary.data;
 
   return (
@@ -49,6 +51,22 @@ export function DashboardPage() {
         }
       />
       {recent.data && recent.data.length === 0 ? <GettingStarted /> : null}
+
+      {toReview.data ? (
+        <Link
+          to="/vendas?situacao=revisar"
+          className="mb-4 flex items-center gap-3 rounded-[var(--radius-card)] border border-accent/60 bg-accent-soft px-4 py-3 text-sm text-ink transition-colors hover:bg-accent-soft/70"
+        >
+          <Link2 className="size-5 shrink-0 text-accent-ink" aria-hidden />
+          <span className="flex-1">
+            <strong>
+              {toReview.data} {toReview.data === 1 ? 'compra anotada' : 'compras anotadas'} pelas clientes
+            </strong>{' '}
+            no link de compras {toReview.data === 1 ? 'aguarda' : 'aguardam'} revisão.
+          </span>
+          <ArrowRight className="size-4 shrink-0 text-muted" aria-hidden />
+        </Link>
+      ) : null}
 
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <PeriodPicker period={period} onChange={setPeriod} />

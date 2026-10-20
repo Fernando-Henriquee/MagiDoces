@@ -19,6 +19,7 @@ import { useBusiness } from '@/features/business/business-context';
 import { formatDateBR } from '@/lib/dates';
 import { groupByCustomer } from '@/lib/receivables';
 import { formatPhoneBR, whatsappLink } from '@/lib/whatsapp';
+import { AccessCodeCard } from './access-code-card';
 import { CustomerFormDialog } from './customer-form-dialog';
 
 export function CustomerDetailPage() {
@@ -112,29 +113,32 @@ export function CustomerDetailPage() {
           </div>
         </Card>
 
-        <Card className="lg:col-span-2">
-          <CardHeader title="Pagamentos" />
-          <div className="p-2">
-            {payments.isPending ? <LoadingBlock rows={2} /> : null}
-            {payments.data?.length === 0 ? <EmptyState title="Nenhum pagamento" className="border-0" /> : null}
-            <ul className="divide-y divide-line">
-              {payments.data?.map((p) => (
-                <li key={p.id} className={p.voided_at ? 'px-2 py-2.5 opacity-60' : 'px-2 py-2.5'}>
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-sm">
-                      {formatDateBR(p.paid_on)} · {paymentMethodLabel(p.method)}
-                    </span>
-                    <Money cents={p.kind === 'refund' ? -p.amount_cents : p.amount_cents} className={p.voided_at ? 'text-sm line-through' : 'text-sm font-medium'} />
-                  </div>
-                  <p className="text-xs text-muted">
-                    {p.kind === 'refund' ? 'Reembolso' : 'Recebimento'} da venda de {formatDateBR(p.sale_date)}
-                    {p.voided_at ? ` · estornado: ${p.void_reason}` : ''}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </Card>
+        <div className="space-y-4 lg:col-span-2">
+          <AccessCodeCard customer={c} />
+          <Card>
+            <CardHeader title="Pagamentos" />
+            <div className="p-2">
+              {payments.isPending ? <LoadingBlock rows={2} /> : null}
+              {payments.data?.length === 0 ? <EmptyState title="Nenhum pagamento" className="border-0" /> : null}
+              <ul className="divide-y divide-line">
+                {payments.data?.map((p) => (
+                  <li key={p.id} className={p.voided_at ? 'px-2 py-2.5 opacity-60' : 'px-2 py-2.5'}>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm">
+                        {formatDateBR(p.paid_on)} · {paymentMethodLabel(p.method)}
+                      </span>
+                      <Money cents={p.kind === 'refund' ? -p.amount_cents : p.amount_cents} className={p.voided_at ? 'text-sm line-through' : 'text-sm font-medium'} />
+                    </div>
+                    <p className="text-xs text-muted">
+                      {p.kind === 'refund' ? 'Reembolso' : 'Recebimento'} da venda de {formatDateBR(p.sale_date)}
+                      {p.voided_at ? ` · estornado: ${p.void_reason}` : ''}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Card>
+        </div>
       </div>
 
       {can('write') ? (

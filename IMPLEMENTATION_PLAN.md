@@ -148,6 +148,7 @@ Princípios:
 | 12 | Auditoria, Configurações, Perfil | ✅ |
 | 13 | E2E Playwright | ✅ (17 cenários × celular e desktop) |
 | 14 | Documentação (README, Supabase, Vercel, backup, rollback) | ✅ |
+| 15 | Link de compras público (a cliente anota, PIX, consulta com código) | ✅ (migration 1000) |
 
 ## 9. Registro de progresso
 
@@ -164,6 +165,12 @@ Princípios:
   - telas offline sem dados carregando indefinidamente;
   - troca de período usando o 1º dia do mês em vez de hoje;
   - script de backup exportaria só `storage.objects` (`--table` anula `--schema`).
+
+- 20/10/2026 — Etapa 15: link de compras. Página pública sem login; `anon` executa
+  só 5 funções `storefront_*`; compras entram como vendas "a revisar"; PIX copia e
+  cola (BR Code) gerado no aparelho; consulta com celular + código (hash com sal,
+  bloqueio após 5 erros); limites de frequência com hashes. 22 testes de banco,
+  testes de PIX/código e E2E no celular e no desktop.
 
 ## 10. Decisões técnicas
 

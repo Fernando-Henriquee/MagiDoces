@@ -1,5 +1,5 @@
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { type ReactNode, Suspense, useMemo } from 'react';
+import { lazy, type ReactNode, Suspense, useMemo } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 import { Toaster } from 'sonner';
 import { AppShell } from '@/components/layout/app-shell';
@@ -13,6 +13,9 @@ import { CACHE_MAX_AGE_MS, createAppQueryClient, createUserPersister, persistDeh
 import { AppRoutes } from './routes';
 import { useOnline } from '@/lib/connectivity';
 import { ConfigProblemScreen, MembershipErrorScreen, NoAccessScreen, OfflineWithoutDataScreen, Splash } from './screens';
+
+// Link de compras das clientes: carregado só quando acessado.
+const StorefrontApp = lazy(() => import('@/features/storefront/storefront-app').then((m) => ({ default: m.StorefrontApp })));
 
 function PublicRoutes() {
   const location = useLocation();
@@ -62,7 +65,16 @@ function UserDataScope({ userId, children }: { userId: string; children: ReactNo
 }
 
 function Root() {
+  const location = useLocation();
   const { session, loading, passwordSetupRequired } = useAuth();
+  // Página pública: igual para visitantes e para quem estiver logado no aparelho.
+  if (location.pathname.startsWith('/compra/')) {
+    return (
+      <Suspense fallback={<Splash />}>
+        <StorefrontApp />
+      </Suspense>
+    );
+  }
   if (loading) return <Splash />;
   if (!session) return <PublicRoutes />;
   if (passwordSetupRequired) return <SetPasswordPage />;

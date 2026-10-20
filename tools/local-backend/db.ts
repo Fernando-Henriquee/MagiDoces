@@ -90,13 +90,15 @@ export class LocalDatabase {
 
   /**
    * Executa numa transação com o papel e as claims do JWT, como o PostgREST:
-   * SET LOCAL ROLE + request.jwt.claims. Constraint triggers adiadas rodam no COMMIT.
+   * SET LOCAL ROLE + request.jwt.claims (+ request.headers). Constraint triggers
+   * adiadas rodam no COMMIT.
    */
-  asRole<T>(claims: Claims, task: (pg: PGlite) => Promise<T>): Promise<T> {
+  asRole<T>(claims: Claims, task: (pg: PGlite) => Promise<T>, headers: Record<string, string> = {}): Promise<T> {
     return this.mutex.run(async () => {
       await this.pg.exec('begin');
       try {
         await this.pg.query(`select set_config('request.jwt.claims', $1, true)`, [JSON.stringify(claims)]);
+        await this.pg.query(`select set_config('request.headers', $1, true)`, [JSON.stringify(headers)]);
         await this.pg.exec(claims.role === 'authenticated' ? 'set local role authenticated' : 'set local role anon');
         const result = await task(this.pg);
         await this.pg.exec('commit');

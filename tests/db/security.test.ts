@@ -63,11 +63,18 @@ describe('catálogo do banco', () => {
     expect(rows).toEqual([]);
   });
 
-  it('anon não executa nenhuma função do public ou do private', async () => {
+  it('anon executa somente as funções do link de compras', async () => {
     const rows = await env.admin().query<{ proname: string }>(`
-      select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
-      where n.nspname in ('public', 'private') and has_function_privilege('anon', p.oid, 'execute')`);
-    expect(rows).toEqual([]);
+      select n.nspname || '.' || p.proname as proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname in ('public', 'private') and has_function_privilege('anon', p.oid, 'execute')
+      order by 1`);
+    expect(rows.map((r) => r.proname)).toEqual([
+      'public.storefront',
+      'public.storefront_create_code',
+      'public.storefront_register_purchase',
+      'public.storefront_report_paid',
+      'public.storefront_statement',
+    ]);
   });
 
   it('authenticated não pode gravar diretamente nas tabelas financeiras', async () => {
@@ -77,7 +84,7 @@ describe('catálogo do banco', () => {
         and privilege_type in ('INSERT', 'UPDATE', 'DELETE', 'TRUNCATE')
         and table_name in ('sales', 'sale_items', 'payments', 'purchases', 'purchase_items', 'expenses',
                            'bill_payments', 'import_batches', 'import_rows', 'audit_logs', 'business_members',
-                           'product_price_history')`);
+                           'product_price_history', 'customer_access_codes', 'storefront_events')`);
     expect(rows).toEqual([]);
   });
 

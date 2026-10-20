@@ -50,7 +50,7 @@ export function useMemberships(userId: string | undefined) {
       const businesses = await unwrap<Business[]>(
         supabase
           .from('businesses')
-          .select('id,name,timezone,default_due_day,pix_key,charge_message_footer')
+          .select('id,name,timezone,default_due_day,pix_key,pix_city,charge_message_footer,storefront_enabled,storefront_token')
           .in('id', members.map((m) => m.business_id)),
       );
       return members

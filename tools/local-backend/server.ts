@@ -91,6 +91,17 @@ function claimsFor(req: IncomingMessage): Claims {
   return { role: 'anon' };
 }
 
+/** Cabeçalhos como o PostgREST os expõe ao banco (request.headers), com a origem da conexão. */
+function requestHeaders(req: IncomingMessage): Record<string, string> {
+  const headers: Record<string, string> = {};
+  for (const [name, value] of Object.entries(req.headers)) {
+    if (name === 'authorization' || name === 'cookie' || value === undefined) continue;
+    headers[name] = Array.isArray(value) ? value.join(', ') : value;
+  }
+  if (!headers['x-forwarded-for'] && req.socket.remoteAddress) headers['x-forwarded-for'] = req.socket.remoteAddress;
+  return headers;
+}
+
 function parseJson(buffer: Buffer): unknown {
   if (buffer.length === 0) return null;
   try {
@@ -155,14 +166,18 @@ async function handleRest(req: IncomingMessage, res: ServerResponse, url: URL) {
   try {
     const raw = await readBody(req);
     request.body = parseJson(raw);
-    const response = await db.asRole(claims, (pg) => {
-      if (path.startsWith('rpc/')) {
-        const args =
-          req.method === 'GET' ? Object.fromEntries(url.searchParams.entries()) : ((request.body as Record<string, unknown>) ?? {});
-        return handleRpc(pg, path.slice(4), args, request);
-      }
-      return handleTable(pg, request);
-    });
+    const response = await db.asRole(
+      claims,
+      (pg) => {
+        if (path.startsWith('rpc/')) {
+          const args =
+            req.method === 'GET' ? Object.fromEntries(url.searchParams.entries()) : ((request.body as Record<string, unknown>) ?? {});
+          return handleRpc(pg, path.slice(4), args, request);
+        }
+        return handleTable(pg, request);
+      },
+      requestHeaders(req),
+    );
     send(res, response.status, response.body, response.headers);
   } catch (error) {
     const rest = toRestError(error, claims.role === 'authenticated');
@@ -267,11 +282,16 @@ const server = createServer((req, res) => {
   });
 });
 
+const storefronts = await db.admin(async (pg) =>
+  (await pg.query<{ name: string; storefront_token: string }>(`select name, storefront_token from public.businesses where storefront_enabled order by name`)).rows,
+);
+
 server.listen(Number(options.port), '127.0.0.1', () => {
   console.log(`\nAPI local em http://127.0.0.1:${options.port}  (chave anon: ${LOCAL_ANON_KEY})`);
   console.log(options.memory ? 'Banco em memória (descartado ao encerrar).' : `Banco persistido em ${dataDir}`);
   console.log('\nContas de teste do ambiente local:');
   for (const account of seeded.accounts) console.log(`  ${account.email}  /  ${account.password}   (${account.description})`);
+  for (const store of storefronts) console.log(`\nLink de compras (${store.name}): http://localhost:5173/compra/${store.storefront_token}`);
   console.log('\nEstes dados existem só neste ambiente local e não têm relação com dados reais.\n');
 });
 

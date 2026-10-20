@@ -9,6 +9,17 @@ export function SaleStatusBadge({ sale }: { sale: Pick<SaleRow, 'payment_status'
   return <Badge tone={status.tone}>{status.label}</Badge>;
 }
 
+/** Selos das compras anotadas pela própria cliente no link de compras. */
+export function SelfServiceBadges({ sale }: { sale: Pick<SaleRow, 'status' | 'balance_cents' | 'self_service_review_pending' | 'customer_reported_paid_at'> }) {
+  if (sale.status !== 'active') return null;
+  return (
+    <>
+      {sale.self_service_review_pending ? <Badge tone="accent">a revisar</Badge> : null}
+      {sale.customer_reported_paid_at && sale.balance_cents > 0 ? <Badge tone="info">avisou que pagou</Badge> : null}
+    </>
+  );
+}
+
 const BILL_LABELS = { paid: 'Paga', partial: 'Parcial', pending: 'A pagar', cancelled: 'Cancelada' } as const;
 
 export function BillStatusBadge({ status, overdue }: { status: keyof typeof BILL_LABELS; overdue: boolean }) {

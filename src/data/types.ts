@@ -28,7 +28,10 @@ export interface Business {
   timezone: string;
   default_due_day: number;
   pix_key: string | null;
+  pix_city: string | null;
   charge_message_footer: string | null;
+  storefront_enabled: boolean;
+  storefront_token: string | null;
 }
 
 export interface Membership {
@@ -165,7 +168,7 @@ export interface SaleRow {
   cancelled_at: string | null;
   cancel_reason: string | null;
   payment_confirmation_pending: boolean;
-  source: 'manual' | 'import';
+  source: 'manual' | 'import' | 'self_service';
   import_batch_id: string | null;
   created_at: string;
   created_by: string | null;
@@ -179,6 +182,12 @@ export interface SaleRow {
   is_overdue: boolean;
   item_count: number;
   items_summary: string | null;
+  /** Anotada pela própria cliente no link de compras, aguardando revisão. */
+  self_service_review_pending: boolean;
+  /** Quando a cliente avisou pelo link que já pagou (a sócia confere e registra). */
+  customer_reported_paid_at: string | null;
+  /** Como a cliente se identificou no link. */
+  self_service_contact: { name: string; phone: string; payment: 'now' | 'due_day' | 'date'; new_customer: boolean } | null;
 }
 
 export interface SaleItemRow {

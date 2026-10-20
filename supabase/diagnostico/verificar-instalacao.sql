@@ -1,6 +1,7 @@
 -- Magi Doces — verifica o que já está instalado no banco (somente leitura).
 -- Cole no Supabase → SQL Editor → Run. Resultado esperado de uma instalação completa:
 --   tabelas = 21, views = 12, funcoes_app = 25, todas as colunas "tem_..." = true.
+--   (tem_1000_link_compras = false: falta aplicar só 20261020001000_storefront.sql.)
 select
   (select count(*) from pg_tables where schemaname = 'public'
      and tablename in ('businesses','business_members','profiles','audit_logs','customers','suppliers','products',
@@ -24,4 +25,5 @@ select
   exists (select 1 from storage.buckets where id = 'receipts') as tem_0700_storage,
   exists (select 1 from pg_policies where schemaname = 'storage' and policyname = 'magi_files_select') as tem_0700_politicas,
   case when to_regclass('public.businesses') is null then false
-       else has_table_privilege('service_role', 'public.businesses', 'insert') end as tem_0900_privilegios;
+       else has_table_privilege('service_role', 'public.businesses', 'insert') end as tem_0900_privilegios,
+  to_regclass('public.customer_access_codes') is not null as tem_1000_link_compras;

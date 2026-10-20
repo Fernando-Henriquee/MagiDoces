@@ -1,12 +1,12 @@
 import { Plus, ShoppingBag } from 'lucide-react';
 import { useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useSearchParams } from 'react-router';
 import { DataTable, type Column } from '@/components/shared/data-table';
 import { ExportMenu } from '@/components/shared/export-menu';
 import { Freshness } from '@/components/shared/freshness';
 import { Money } from '@/components/shared/money';
 import { PeriodPicker, usePeriod } from '@/components/shared/period-picker';
-import { SaleStatusBadge } from '@/components/shared/sale-status';
+import { SaleStatusBadge, SelfServiceBadges } from '@/components/shared/sale-status';
 import { Page, PageHeader } from '@/components/layout/page';
 import { Button } from '@/components/ui/button';
 import { Select } from '@/components/ui/input';
@@ -31,7 +31,16 @@ const columns: Column<SaleRow>[] = [
   { key: 'paid', header: 'Recebido', align: 'right', cell: (s) => <Money cents={s.net_paid_cents} className="text-muted" />, sortValue: (s) => s.net_paid_cents },
   { key: 'balance', header: 'Saldo', align: 'right', cell: (s) => (s.balance_cents > 0 ? <Money cents={s.balance_cents} className="font-semibold" /> : '—'), sortValue: (s) => s.balance_cents },
   { key: 'due', header: 'Vencimento', cell: (s) => (s.balance_cents > 0 ? formatDateBR(s.due_date) : '—'), sortValue: (s) => s.due_date },
-  { key: 'status', header: 'Situação', cell: (s) => <SaleStatusBadge sale={s} /> },
+  {
+    key: 'status',
+    header: 'Situação',
+    cell: (s) => (
+      <span className="flex flex-wrap gap-1">
+        <SaleStatusBadge sale={s} />
+        <SelfServiceBadges sale={s} />
+      </span>
+    ),
+  },
 ];
 
 export const saleExportColumns: ExportColumn<SaleRow>[] = [
@@ -48,21 +57,26 @@ export const saleExportColumns: ExportColumn<SaleRow>[] = [
   { header: 'Situação', value: (s) => ({ paid: 'Paga', partial: 'Parcial', pending: 'Pendente', cancelled: 'Cancelada' })[s.payment_status] },
   { header: 'Vencida', value: (s) => s.is_overdue, kind: 'boolean' },
   { header: 'Custo estimado', value: (s) => s.cost_total_cents, kind: 'money' },
-  { header: 'Origem', value: (s) => (s.source === 'import' ? 'Importada' : 'Manual') },
+  { header: 'Origem', value: (s) => ({ import: 'Importada', self_service: 'Link de compras', manual: 'Manual' })[s.source] },
   { header: 'Observações', value: (s) => s.notes },
 ];
 
-type StatusFilter = 'all' | 'open' | 'paid' | 'overdue' | 'pending_confirmation' | 'cancelled';
+type StatusFilter = 'all' | 'open' | 'paid' | 'overdue' | 'pending_confirmation' | 'review' | 'cancelled';
+
+const STATUS_PARAMS: Record<string, StatusFilter> = { revisar: 'review', 'em-aberto': 'open', vencidas: 'overdue' };
 
 export function SalesPage() {
   const { can } = useBusiness();
   const [period, setPeriod] = usePeriod('month');
-  const [status, setStatus] = useState<StatusFilter>('all');
+  const [searchParams] = useSearchParams();
+  const [status, setStatus] = useState<StatusFilter>(() => STATUS_PARAMS[searchParams.get('situacao') ?? ''] ?? 'all');
+  // "A revisar" mostra todas as datas: nenhuma compra anotada pela cliente fica esquecida.
+  const allDates = status === 'review';
   const filters: SaleFilters = {
-    from: period.from,
-    to: period.to,
+    from: allDates ? undefined : period.from,
+    to: allDates ? undefined : period.to,
     status: status === 'cancelled' ? 'cancelled' : status === 'all' ? 'all' : 'active',
-    paymentStatus: status === 'open' || status === 'paid' || status === 'overdue' || status === 'pending_confirmation' ? status : 'all',
+    paymentStatus: status === 'open' || status === 'paid' || status === 'overdue' || status === 'pending_confirmation' || status === 'review' ? status : 'all',
   };
   const sales = useSales(filters);
   const rows = sales.data ?? [];
@@ -86,7 +100,11 @@ export function SalesPage() {
         }
       />
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <PeriodPicker period={period} onChange={setPeriod} />
+        {allDates ? (
+          <p className="text-sm text-muted">Compras anotadas pelas clientes no link, de todas as datas, aguardando revisão.</p>
+        ) : (
+          <PeriodPicker period={period} onChange={setPeriod} />
+        )}
         <Freshness query={sales} />
       </div>
       {sales.isPending ? <LoadingBlock /> : null}
@@ -102,7 +120,7 @@ export function SalesPage() {
           initialSort={{ key: 'date', direction: 'desc' }}
           caption="Vendas"
           rowClassName={(s) => (s.status === 'cancelled' ? 'opacity-70' : undefined)}
-          emptyTitle="Nenhuma venda neste período"
+          emptyTitle={allDates ? 'Nenhuma compra anotada pelo link aguardando revisão' : 'Nenhuma venda neste período'}
           emptyAction={can('write') ? <Button asChild size="sm"><Link to="/vendas/nova"><ShoppingBag /> Registrar venda</Link></Button> : null}
           toolbar={
             <div className="flex flex-1 flex-wrap items-center gap-2">
@@ -112,9 +130,10 @@ export function SalesPage() {
                 <option value="overdue">Vencidas</option>
                 <option value="paid">Pagas</option>
                 <option value="pending_confirmation">A confirmar (importadas)</option>
+                <option value="review">A revisar (anotadas pela cliente)</option>
                 <option value="cancelled">Canceladas</option>
               </Select>
-              <ExportMenu rows={rows} columns={saleExportColumns} fileName={`vendas-${period.from}-a-${period.to}`} />
+              <ExportMenu rows={rows} columns={saleExportColumns} fileName={allDates ? 'vendas-a-revisar' : `vendas-${period.from}-a-${period.to}`} />
               <p className="text-xs text-muted sm:ml-auto">
                 {active.length} {active.length === 1 ? 'venda' : 'vendas'} · total <Money cents={total} /> · em aberto <Money cents={open} />
               </p>
@@ -130,7 +149,10 @@ export function SalesPage() {
               </div>
               <div className="flex flex-col items-end gap-1">
                 <Money cents={s.total_cents} className={s.status === 'cancelled' ? 'text-muted line-through' : 'font-semibold'} />
-                <SaleStatusBadge sale={s} />
+                <span className="flex flex-wrap justify-end gap-1">
+                  <SaleStatusBadge sale={s} />
+                  <SelfServiceBadges sale={s} />
+                </span>
               </div>
             </div>
           )}

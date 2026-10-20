@@ -62,6 +62,7 @@ políticas. Não é necessário criar nada manualmente no painel.
    7. `20261019000700_storage_seed.sql`
    8. `20261019000800_fixes.sql`
    9. `20261019000900_explicit_grants.sql`
+   10. `20261020001000_storefront.sql` (link de compras)
 3. Cada execução deve terminar com "Success". Se uma falhar, **pare** e corrija
    antes de seguir (não pule arquivos).
 
@@ -204,6 +205,10 @@ Faça com o app publicado (ou rodando localmente com as variáveis do projeto):
 
 - Toda mudança estrutural vira **um novo arquivo** em `supabase/migrations/`
   (nunca edite um arquivo já aplicado).
+- **Banco já instalado?** Aplique **só os arquivos novos**, nunca o
+  `instalacao-completa.sql` de novo (ele falha com "already exists"). Ex.: para o
+  link de compras, cole no SQL Editor apenas `20261020001000_storefront.sql`.
+  Confira depois com `supabase/diagnostico/verificar-instalacao.sql`.
 - Fluxo: rodar `npm run test:db` → aplicar no projeto de **teste** → testar o app
   de preview → **fazer backup** da produção → aplicar na produção.
 - Se uma migration der errado em produção, a correção é uma nova migration

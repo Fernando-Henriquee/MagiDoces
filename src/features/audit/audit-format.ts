@@ -44,6 +44,7 @@ export const ENTITY_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'import_batch', label: 'Importações' },
   { value: 'member', label: 'Membros' },
   { value: 'business', label: 'Configurações do negócio' },
+  { value: 'customer', label: 'Clientes (código de consulta)' },
 ];
 
 export const ACTION_OPTIONS: Array<{ value: string; label: string }> = [
@@ -85,6 +86,11 @@ const ACTION_LABELS: Record<string, string> = {
   'member.updated': 'Papel de membro alterado',
   'member.deleted': 'Membro removido',
   'business.updated': 'Configurações alteradas',
+  'business.storefront_configured': 'Link de compras configurado',
+  'sale.reviewed': 'Venda anotada pela cliente revisada',
+  'sale.customer_reported_paid': 'Cliente avisou que pagou',
+  'customer.access_code_set': 'Código de consulta gerado',
+  'customer.access_code_removed': 'Código de consulta removido',
 };
 
 type Json = Record<string, unknown>;
@@ -173,6 +179,10 @@ export const FIELD_LABELS: Record<string, string> = {
   timezone: 'Fuso horário',
   default_due_day: 'Dia padrão de vencimento',
   pix_key: 'Chave PIX',
+  pix_city: 'Cidade do PIX',
+  storefront_enabled: 'Link de compras ativo',
+  self_service_review_pending: 'Aguardando revisão',
+  customer_reported_paid_at: 'Cliente avisou que pagou',
   charge_message_footer: 'Rodapé da cobrança',
   role: 'Papel',
   user_id: 'Usuário',
@@ -302,7 +312,8 @@ export function summarizeAudit(row: Pick<AuditRow, 'action' | 'details'>): strin
     case 'sale.created': {
       const sale = asObject(details.venda);
       const items = Array.isArray(sale?.itens) ? sale.itens.length : 0;
-      return sale ? parts(String(sale.cliente ?? 'Sem cliente'), money(sale.total_cents), `${items} ${items === 1 ? 'item' : 'itens'}`) : null;
+      const viaLink = details.origem === 'link_publico' ? 'anotada pela cliente no link' : null;
+      return sale ? parts(String(sale.cliente ?? 'Sem cliente'), money(sale.total_cents), `${items} ${items === 1 ? 'item' : 'itens'}`, viaLink) : null;
     }
     case 'sale.updated': {
       const before = asObject(details.antes);
@@ -355,6 +366,11 @@ export function summarizeAudit(row: Pick<AuditRow, 'action' | 'details'>): strin
       const role = change(details, 'role');
       return role ? `Papel alterado: ${String(role.de)} → ${String(role.para)}` : null;
     }
+    case 'business.storefront_configured':
+      return parts(details.ativo ? 'Link ativado' : 'Link desativado', details.link_trocado === true && 'endereço trocado (o antigo deixou de funcionar)');
+    case 'customer.access_code_set':
+    case 'customer.access_code_removed':
+      return details.cliente ? `Cliente: ${String(details.cliente)}` : null;
     case 'business.updated': {
       const changes = asObject(details.alteracoes);
       return changes ? `Alterado: ${Object.keys(changes).map(fieldLabel).join(', ')}` : null;

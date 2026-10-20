@@ -71,7 +71,8 @@ A faixa azul no topo indica o ambiente local.
 | **Início** | Faturamento, recebido, CMV e lucro estimados, contas a receber, vencidos, previsto para o dia 10, contas a pagar, compras, despesas, fluxo de caixa. Filtro por dia, semana, mês ou período. |
 | **Vendas** | Registro rápido (produtos por toque), cliente existente ou cadastrado na hora, vários itens, preço e desconto por item e na venda, pago/parcial/a receber, vencimento no dia 10 em um toque. Edição, cancelamento rastreável, estorno e reembolso. Preço e custo históricos gravados em cada item. |
 | **A receber** | Por cliente e por vencimento, filtro do dia 10 (próximo ou todo dia 10), parciais, a confirmar, período; histórico de movimentações; exportação; **resumo para WhatsApp**. |
-| **Clientes** | Cadastro, histórico de compras e pagamentos, saldo e vencidos. Clientes com histórico não podem ser excluídos (são desativados). |
+| **Link de compras** | Link público ou QR code (sem login) em que a **própria cliente anota a compra**: escolhe os produtos, informa nome e celular e diz quando paga (agora pelo PIX, no dia 10 ou em outra data). Pagamento na hora mostra o **PIX copia e cola e o QR code com o valor certo**. A compra entra em Vendas com o selo “a revisar”. A cliente consulta **quanto deve** com celular + código de 4 números. Liga/desliga e troca do link em Configurações. |
+| **Clientes** | Cadastro, histórico de compras e pagamentos, saldo e vencidos, código de consulta do link de compras. Clientes com histórico não podem ser excluídos (são desativados). |
 | **Produtos** | Preço (pode ficar "a definir"), custo manual ou por receita, foto, histórico de preços, margem estimada. Os 4 produtos iniciais vêm como configuração, sem preço presumido. |
 | **Ingredientes e receitas** | Custo de aquisição, quantidade, aproveitamento; receitas com rendimento e custos adicionais; conversão kg↔g, l↔ml, dúzia↔unidade (incompatíveis são recusadas). Receitas são opcionais. |
 | **Compras e despesas** | Itens, fornecedor, categoria, frete e desconto, comprovante; pagas, a pagar ou **parceladas**; pagamento de parcelas, estorno, cancelamento. |
@@ -79,7 +80,7 @@ A faixa azul no topo indica o ambiente local.
 | **Relatórios** | Vendas e recebimentos por período, a receber, compras e despesas, resultado estimado, produtos mais vendidos e margem, clientes, consumo de ingredientes. CSV e Excel. |
 | **Importar planilha** | XLSX, XLS e CSV; detecção de colunas e de produtos pelos cabeçalhos; mapeamento manual; regras de migração explícitas; prévia com validação, correção e duplicidades; importação transacional e **idempotente**; relatório e histórico de lotes. |
 | **Auditoria** | Quem fez o quê e quando: vendas, recebimentos, estornos, cancelamentos, vencimentos, compras, importações, configurações e membros. Somente leitura. |
-| **Configurações e perfil** | Dados do negócio (fuso, dia de vencimento, chave PIX, rodapé da cobrança), pessoas com acesso, instalação do app, dados salvos no aparelho, troca de senha, sair de todos os aparelhos. |
+| **Configurações e perfil** | Dados do negócio (fuso, dia de vencimento, chave PIX e cidade do PIX, rodapé da cobrança), link de compras com QR code para imprimir, pessoas com acesso, instalação do app, dados salvos no aparelho, troca de senha, sair de todos os aparelhos. |
 
 ## Arquitetura
 

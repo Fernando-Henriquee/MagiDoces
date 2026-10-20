@@ -29,6 +29,12 @@ custo da linha      = round(quantidade × custo unitário histórico)
   usam o custo vigente.
 - Item sem custo informado entra com custo desconhecido e é contado em
   "itens sem custo" (o lucro fica sinalizado como parcial).
+- **Compra anotada pela cliente** (link de compras) é uma venda como qualquer
+  outra: entra no faturamento e nas contas a receber na hora, com data de hoje e
+  origem "Link de compras". Vencimento: **agora** = hoje (forma prevista PIX);
+  **no dia 10** = próximo dia padrão de vencimento *depois* de hoje; **outra data**
+  = escolhida pela cliente, de hoje até 90 dias. "Já paguei" **não** é recebimento:
+  o saldo só muda quando uma sócia registra o pagamento.
 
 ## 3. Recebimentos, saldo e situação
 

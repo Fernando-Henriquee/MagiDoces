@@ -32,7 +32,7 @@ export function useMyProfile() {
   );
 }
 
-export type BusinessSettingsInput = Pick<Business, 'name' | 'timezone' | 'default_due_day' | 'pix_key' | 'charge_message_footer'>;
+export type BusinessSettingsInput = Pick<Business, 'name' | 'timezone' | 'default_due_day' | 'pix_key' | 'pix_city' | 'charge_message_footer'>;
 
 export function useSaveBusinessSettings() {
   const queryClient = useQueryClient();
@@ -44,7 +44,7 @@ export function useSaveBusinessSettings() {
           .from('businesses')
           .update(values)
           .eq('id', businessId)
-          .select('id,name,timezone,default_due_day,pix_key,charge_message_footer')
+          .select('id,name,timezone,default_due_day,pix_key,pix_city,charge_message_footer,storefront_enabled,storefront_token')
           .single(),
       ),
     success: 'Configurações salvas.',

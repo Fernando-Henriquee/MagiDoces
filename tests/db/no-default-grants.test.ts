@@ -58,6 +58,21 @@ describe('sem privilégios automáticos do Supabase', () => {
     expect(result.audit).toBeGreaterThan(0);
   });
 
+  it('link de compras funciona para anon só com as concessões explícitas', async () => {
+    const token = await env.as(ana, (s) => s.rpc<string>('configure_storefront', { p_business_id: businessId, p_enabled: true }));
+    const bolo = await env.as(ana, (s) => productId(s, businessId, 'Bolo de pote'));
+    const shown = await env.anon((s) => s.rpc<{ products: unknown[] }>('storefront', { p_token: token }));
+    expect(shown.products).toHaveLength(1);
+    const receipt = await env.anon((s) =>
+      s.rpc<{ total_cents: number; code_status: string }>('storefront_register_purchase', {
+        p_token: token,
+        p_request_id: crypto.randomUUID(),
+        p_purchase: { name: 'Joana', phone: '11 98765-4321', payment: 'now', items: [{ product_id: bolo, quantity: 1 }] },
+      }),
+    );
+    expect(receipt).toMatchObject({ total_cents: 1200, code_status: 'can_create' });
+  });
+
   it('anon continua sem acesso algum', async () => {
     await expect(env.anon((s) => s.query(`select * from public.v_sales`))).rejects.toThrow(/permission denied/);
     const grants = await env.admin().query(`select 1 from information_schema.role_table_grants where table_schema = 'public' and grantee in ('anon', 'PUBLIC')`);

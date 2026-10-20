@@ -8,7 +8,7 @@ export interface SaleFilters {
   to?: string;
   customerId?: string;
   status?: 'active' | 'cancelled' | 'all';
-  paymentStatus?: 'open' | 'paid' | 'overdue' | 'pending_confirmation' | 'all';
+  paymentStatus?: 'open' | 'paid' | 'overdue' | 'pending_confirmation' | 'review' | 'all';
   limit?: number;
 }
 
@@ -22,6 +22,7 @@ export async function fetchSales(businessId: string, filters: SaleFilters = {}):
   if (filters.paymentStatus === 'paid') query = query.eq('payment_status', 'paid');
   if (filters.paymentStatus === 'overdue') query = query.eq('is_overdue', true);
   if (filters.paymentStatus === 'pending_confirmation') query = query.eq('payment_confirmation_pending', true).eq('status', 'active');
+  if (filters.paymentStatus === 'review') query = query.eq('self_service_review_pending', true).eq('status', 'active');
   query = query.order('sale_date', { ascending: false }).order('created_at', { ascending: false });
   if (filters.limit) query = query.limit(filters.limit);
   return unwrap<SaleRow[]>(query);

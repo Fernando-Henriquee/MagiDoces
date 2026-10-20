@@ -121,6 +121,9 @@ async function seedDemo(db: LocalDatabase, businessId: string, userId: string) {
         plan: { mode: 'installments', count: 2, first_due_date: day(15) },
       }),
     ]);
+    // Link de compras ligado, com chave PIX fictícia (o QR code é só de demonstração).
+    await pg.query(`update public.businesses set pix_key = 'pix-demonstracao@magidoces.local', pix_city = 'Sao Paulo' where id = $1`, [businessId]);
+    await pg.query(`select public.configure_storefront($1, true)`, [businessId]);
     await pg.query(`select public.create_expense($1, $2, $3::jsonb)`, [
       businessId,
       randomUUID(),

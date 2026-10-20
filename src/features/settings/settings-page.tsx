@@ -1,11 +1,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQuery } from '@tanstack/react-query';
-import { Download, HardDrive, Share, Trash2, Users } from 'lucide-react';
+import { Copy, Download, ExternalLink, HardDrive, Link2, MessageCircle, QrCode as QrCodeIcon, RefreshCw, Share, Trash2, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { z } from 'zod';
 import { Page, PageHeader } from '@/components/layout/page';
+import { QrCode } from '@/components/shared/qr-code';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -14,10 +15,12 @@ import { Field } from '@/components/ui/field';
 import { Input, Select, Textarea } from '@/components/ui/input';
 import { ErrorState, LoadingBlock } from '@/components/ui/states';
 import { useBusinessMembers, useSaveBusinessSettings } from '@/data/settings';
+import { storefrontUrl, useConfigureStorefront } from '@/data/storefront';
 import { useAuth, wipeLocalData } from '@/features/auth/auth-context';
 import { ROLE_LABELS, useBusiness } from '@/features/business/business-context';
 import { formatDateBR } from '@/lib/dates';
 import { env } from '@/lib/env';
+import { downloadQrPng } from '@/lib/qr';
 import { CACHE_MAX_AGE_MS } from '@/lib/query-cache';
 import { isIOS, useInstallPrompt } from './install-prompt';
 
@@ -37,7 +40,8 @@ const schema = z.object({
   name: z.string().trim().min(1, 'Informe o nome do negócio.').max(120, 'Use no máximo 120 caracteres.'),
   timezone: z.string().min(1, 'Escolha o fuso horário.'),
   default_due_day: z.number({ message: 'Informe um dia entre 1 e 31.' }).int('Informe um dia inteiro.').min(1, 'Mínimo 1.').max(31, 'Máximo 31.'),
-  pix_key: z.string().trim().max(140, 'Use no máximo 140 caracteres.'),
+  pix_key: z.string().trim().max(77, 'Chaves PIX têm no máximo 77 caracteres.'),
+  pix_city: z.string().trim().max(15, 'Use no máximo 15 caracteres.'),
   charge_message_footer: z.string().trim().max(500, 'Use no máximo 500 caracteres.'),
 });
 
@@ -52,6 +56,7 @@ function BusinessForm() {
     timezone: business.timezone,
     default_due_day: business.default_due_day,
     pix_key: business.pix_key ?? '',
+    pix_city: business.pix_city ?? '',
     charge_message_footer: business.charge_message_footer ?? '',
   });
   const form = useForm<Values>({ resolver: zodResolver(schema), defaultValues: toValues() });
@@ -74,6 +79,7 @@ function BusinessForm() {
         timezone: values.timezone,
         default_due_day: values.default_due_day,
         pix_key: values.pix_key || null,
+        pix_city: values.pix_city || null,
         charge_message_footer: values.charge_message_footer || null,
       })
       .catch(() => undefined),
@@ -103,8 +109,15 @@ function BusinessForm() {
           <Field label="Dia padrão de vencimento" hint="Usado como sugestão de vencimento (ex.: dia 10)." error={errors.default_due_day?.message}>
             <Input type="number" inputMode="numeric" min={1} max={31} {...form.register('default_due_day', { valueAsNumber: true })} />
           </Field>
-          <Field label="Chave PIX" hint="Aparece no resumo de cobrança enviado pelo WhatsApp." error={errors.pix_key?.message} className="sm:col-span-2">
+          <Field
+            label="Chave PIX"
+            hint="Vai no resumo de cobrança e no QR code do link de compras. Celular como chave: use +55 e DDD (ex.: +5511987654321)."
+            error={errors.pix_key?.message}
+          >
             <Input autoComplete="off" {...form.register('pix_key')} />
+          </Field>
+          <Field label="Cidade (para o PIX)" hint="Aparece no app do banco ao pagar. Até 15 letras." error={errors.pix_city?.message}>
+            <Input autoComplete="address-level2" maxLength={15} {...form.register('pix_city')} />
           </Field>
           <Field
             label="Rodapé da mensagem de cobrança"
@@ -123,6 +136,117 @@ function BusinessForm() {
           </div>
         ) : null}
       </form>
+    </Card>
+  );
+}
+
+function StorefrontCard() {
+  const { business, can } = useBusiness();
+  const editable = can('settings');
+  const configure = useConfigureStorefront();
+  const [confirm, setConfirm] = useState<'regenerate' | 'disable' | null>(null);
+  const link = business.storefront_enabled && business.storefront_token ? storefrontUrl(business.storefront_token) : null;
+  const shopName = business.name.replace(/\s*\(.*\)\s*$/, '');
+
+  async function copyLink() {
+    if (!link) return;
+    try {
+      await navigator.clipboard.writeText(link);
+      toast.success('Link copiado.');
+    } catch {
+      toast.error('Não foi possível copiar. Selecione o link e copie manualmente.');
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader
+        title={
+          <span className="flex items-center gap-2">
+            <Link2 className="size-4 text-muted" aria-hidden /> Link de compras
+          </span>
+        }
+        description="As próprias clientes anotam a compra pelo celular, sem login, por um link ou QR code."
+        actions={link ? <Badge tone="success">Ativo</Badge> : <Badge>Desligado</Badge>}
+      />
+      <div className="space-y-4 p-4 text-sm">
+        {link ? (
+          <>
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+              <QrCode value={link} label="QR code do link de compras" className="size-36 shrink-0 self-center rounded-lg border border-line" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <Field label="Endereço do link">
+                  <Input readOnly value={link} onFocus={(e) => e.currentTarget.select()} className="font-mono text-xs" />
+                </Field>
+                <div className="flex flex-wrap gap-2">
+                  <Button size="sm" variant="outline" onClick={() => void copyLink()}>
+                    <Copy /> Copiar link
+                  </Button>
+                  <Button size="sm" variant="outline" asChild>
+                    <a href={`https://wa.me/?text=${encodeURIComponent(`Anote suas compras na ${shopName} e veja quanto deve por aqui: ${link}`)}`} target="_blank" rel="noopener noreferrer">
+                      <MessageCircle /> Enviar no WhatsApp
+                    </a>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => downloadQrPng(link, 'qr-code-link-de-compras.png', `Anote sua compra — ${shopName}`).catch((error: Error) => toast.error(error.message))}
+                  >
+                    <QrCodeIcon /> Baixar QR code
+                  </Button>
+                  <Button size="sm" variant="ghost" asChild>
+                    <a href={link} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink /> Abrir
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <ul className="list-disc space-y-1 pl-5 text-xs text-ink-soft">
+              <li>Aparecem os produtos ativos com preço. Compras entram em Vendas com o selo “a revisar”.</li>
+              <li>Pagamento na hora mostra o PIX com o valor certo{business.pix_key ? '' : ' — cadastre a chave PIX acima para isso funcionar'}.</li>
+              <li>A consulta “quanto eu devo” pede celular + código de 4 números. Gere o código na ficha da cliente.</li>
+            </ul>
+            {editable ? (
+              <div className="flex flex-wrap gap-2 border-t border-line pt-3">
+                <Button size="sm" variant="outline" onClick={() => setConfirm('regenerate')}>
+                  <RefreshCw /> Trocar link
+                </Button>
+                <Button size="sm" variant="danger-outline" onClick={() => setConfirm('disable')}>
+                  Desligar link
+                </Button>
+              </div>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <p className="text-ink-soft">
+              Com o link ligado, você pode deixar um QR code no balcão ou mandar o link: a cliente escolhe os produtos, informa nome e celular e diz quando vai
+              pagar (agora pelo PIX, no dia {business.default_due_day} ou em outra data).
+            </p>
+            {editable ? (
+              <Button loading={configure.isPending} onClick={() => configure.mutate({ enabled: true })}>
+                <Link2 /> Ligar link de compras
+              </Button>
+            ) : (
+              <p className="text-xs text-muted">Somente sócias/administradoras podem ligar o link.</p>
+            )}
+          </>
+        )}
+      </div>
+      <ConfirmDialog
+        open={confirm !== null}
+        onOpenChange={(open) => !open && setConfirm(null)}
+        title={confirm === 'regenerate' ? 'Trocar o link de compras?' : 'Desligar o link de compras?'}
+        description={
+          confirm === 'regenerate'
+            ? 'Um endereço novo é criado. O link e o QR code antigos param de funcionar na hora — use se o link foi parar onde não devia.'
+            : 'Ninguém consegue anotar compras nem consultar pelo link até você ligar de novo. O endereço continua o mesmo ao religar.'
+        }
+        confirmLabel={confirm === 'regenerate' ? 'Trocar link' : 'Desligar'}
+        tone={confirm === 'regenerate' ? 'primary' : undefined}
+        onConfirm={() => configure.mutateAsync(confirm === 'regenerate' ? { enabled: true, regenerate: true } : { enabled: false })}
+      />
     </Card>
   );
 }
@@ -264,6 +388,7 @@ export function SettingsPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="space-y-4">
           <BusinessForm />
+          <StorefrontCard />
         </div>
         <div className="space-y-4">
           <Members />

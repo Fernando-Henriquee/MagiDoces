@@ -36,7 +36,8 @@ export function AuditPage() {
     );
   }
 
-  const author = (row: AuditRow) => (row.actor_id ? (names[row.actor_id] ?? 'Outro usuário') : 'Administração do sistema');
+  const author = (row: AuditRow) =>
+    row.actor_id ? (names[row.actor_id] ?? 'Outro usuário') : row.details.origem === 'link_publico' ? 'Cliente (link de compras)' : 'Administração do sistema';
   const links = audit.data?.links ?? { payments: {}, billPayments: {} };
 
   const columns: Column<AuditRow>[] = [
