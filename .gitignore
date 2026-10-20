@@ -34,3 +34,4 @@ playwright/.cache/
 
 # backups locais de banco (dados reais) — nunca versionar
 backups/
+supabase/.bundle/

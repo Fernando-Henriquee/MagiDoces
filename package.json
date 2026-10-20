@@ -26,7 +26,8 @@
     "local:add-user": "tsx scripts/local-add-user.ts",
     "provision": "tsx scripts/provision-users.ts",
     "test:e2e:ui": "playwright test --ui",
-    "backup:db": "bash scripts/backup-db.sh"
+    "backup:db": "bash scripts/backup-db.sh",
+    "sql:bundle": "tsx scripts/bundle-migrations.ts"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.3.0",
