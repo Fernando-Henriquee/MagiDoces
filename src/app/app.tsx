@@ -3,6 +3,7 @@ import { lazy, type ReactNode, Suspense, useMemo } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 import { Toaster } from 'sonner';
 import { AppShell } from '@/components/layout/app-shell';
+import { PwaUpdatePrompt } from '@/components/layout/pwa-update';
 import { AuthProvider, useAuth } from '@/features/auth/auth-context';
 import { ForgotPasswordPage } from '@/features/auth/forgot-password-page';
 import { LoginPage } from '@/features/auth/login-page';
@@ -64,7 +65,7 @@ function UserDataScope({ userId, children }: { userId: string; children: ReactNo
   );
 }
 
-function Root() {
+function Screens() {
   const location = useLocation();
   const { session, loading, passwordSetupRequired } = useAuth();
   // Página pública: igual para visitantes e para quem estiver logado no aparelho.
@@ -82,6 +83,17 @@ function Root() {
     <UserDataScope key={session.user.id} userId={session.user.id}>
       <MembershipGate userId={session.user.id} />
     </UserDataScope>
+  );
+}
+
+/** A verificação de versão nova vale para todas as telas, logadas ou não. */
+function Root() {
+  const { session } = useAuth();
+  return (
+    <>
+      <Screens />
+      <PwaUpdatePrompt autoUpdate={!session} />
+    </>
   );
 }
 

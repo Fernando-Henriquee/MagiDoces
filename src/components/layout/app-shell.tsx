@@ -10,7 +10,6 @@ import { cn } from '@/lib/cn';
 import { LocalEnvBanner, OfflineBanner } from './banners';
 import { BrandMark, BrandName } from './brand';
 import { MOBILE_PRIMARY, NAV_GROUPS, type NavItem } from './nav';
-import { PwaUpdatePrompt } from './pwa-update';
 
 function useVisibleGroups() {
   const { can } = useBusiness();
@@ -219,7 +218,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </div>
       <MobileNav />
-      <PwaUpdatePrompt />
     </div>
   );
 }

@@ -1,14 +1,22 @@
 import { RefreshCw, X } from 'lucide-react';
+import { useEffect } from 'react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { Button } from '@/components/ui/button';
 
 const UPDATE_CHECK_INTERVAL_MS = 60 * 60 * 1000;
+/** Versão nova encontrada logo ao abrir: ainda não há nada digitado a perder. */
+const AUTO_UPDATE_WINDOW_MS = 15_000;
+const LOADED_AT = Date.now();
 
 /**
  * Atualização controlada: quando há uma nova versão, o usuário escolhe o momento
  * de recarregar (evita perder um formulário em preenchimento).
+ *
+ * `autoUpdate` (telas fora da área logada: login, link de compras): a versão nova
+ * encontrada logo ao abrir é aplicada na hora, para ninguém ficar preso numa
+ * versão antiga guardada no aparelho (ex.: apontando para um servidor que mudou).
  */
-export function PwaUpdatePrompt() {
+export function PwaUpdatePrompt({ autoUpdate = false }: { autoUpdate?: boolean }) {
   const {
     needRefresh: [needRefresh, setNeedRefresh],
     updateServiceWorker,
@@ -20,6 +28,10 @@ export function PwaUpdatePrompt() {
       }, UPDATE_CHECK_INTERVAL_MS);
     },
   });
+
+  useEffect(() => {
+    if (autoUpdate && needRefresh && Date.now() - LOADED_AT < AUTO_UPDATE_WINDOW_MS) void updateServiceWorker(true);
+  }, [autoUpdate, needRefresh, updateServiceWorker]);
 
   if (!needRefresh) return null;
   return (

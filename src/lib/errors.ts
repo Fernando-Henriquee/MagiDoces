@@ -48,6 +48,9 @@ export function describeError(error: unknown): string {
   // Auth
   if (/Invalid login credentials/i.test(message)) return 'E-mail ou senha incorretos.';
   if (/Email not confirmed/i.test(message)) return 'Este e-mail ainda não foi confirmado.';
+  if (/Email logins are disabled|email_provider_disabled/i.test(message)) {
+    return 'O login por e-mail está desativado no Supabase (Authentication → Sign In / Providers → Email).';
+  }
   if (/rate limit|too many requests/i.test(message) || e.status === 429) return 'Muitas tentativas. Aguarde alguns minutos e tente novamente.';
   if (/at least \d+ characters|weak_password|Password should/i.test(message)) return 'Senha fraca: use pelo menos 8 caracteres, misturando letras e números.';
   if (/should be different from the old password/i.test(message)) return 'A nova senha precisa ser diferente da atual.';

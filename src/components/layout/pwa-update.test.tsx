@@ -1,6 +1,6 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { pwaMock } from '@/test/pwa-register-mock';
 import { PwaUpdatePrompt } from './pwa-update';
 
@@ -27,6 +27,12 @@ describe('atualização controlada da PWA', () => {
     expect(pwaMock.updateServiceWorker).not.toHaveBeenCalled();
     await userEvent.click(screen.getByRole('button', { name: 'Atualizar' }));
     expect(pwaMock.updateServiceWorker).toHaveBeenCalledWith(true);
+  });
+
+  it('fora da área logada, aplica sozinha a versão nova encontrada ao abrir', async () => {
+    pwaMock.needRefresh = true;
+    render(<PwaUpdatePrompt autoUpdate />);
+    await vi.waitFor(() => expect(pwaMock.updateServiceWorker).toHaveBeenCalledWith(true));
   });
 
   it('"Depois" adia a atualização sem recarregar', async () => {
